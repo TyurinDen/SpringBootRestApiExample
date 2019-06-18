@@ -3,12 +3,11 @@ package com.websystique.springboot.service.impl;
 import com.google.gson.*;
 import com.websystique.springboot.configs.InfoBotConfig;
 import com.websystique.springboot.service.VkInfoBotService;
-import com.websystique.springboot.service.vkInfoBotClasses.*;
+import com.websystique.springboot.service.vkInfoBotClasses.LongPollServer;
 import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
 import com.websystique.springboot.service.vkInfoBotClasses.commands.CommandExecutor;
 import com.websystique.springboot.service.vkInfoBotClasses.commands.EntityManager;
 import com.websystique.springboot.service.vkInfoBotClasses.entities.Client;
-import com.websystique.springboot.service.vkInfoBotClasses.entities.Student;
 import com.websystique.springboot.service.vkInfoBotClasses.errors.ResponseFromApiVk;
 import com.websystique.springboot.service.vkInfoBotClasses.exceptions.*;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
@@ -21,7 +20,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Queue;
 import java.util.concurrent.*;
 
 @Component
@@ -38,15 +40,16 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     private final OkHttpClient okHttpClient; //TODO Как реализовать http-клиент? Как статик? Инжектить извне?
     private final InfoBotConfig botConfig;
-    // TODO: 22.05.2019 надо ли ограничивать размер очереди?
 
     private ExecutorService executorService = Executors.newCachedThreadPool();
 
     // очереди сообщений создаются один раз
-    private Queue<Message> inMessagesQueue = new ConcurrentLinkedQueue<>();
-    private Queue<Message> outMessagesQueue = new ConcurrentLinkedQueue<>();
+    // TODO: 22.05.2019 надо ли ограничивать размер очереди?
+    private final Queue<Message> inMessagesQueue = new ConcurrentLinkedQueue<>();
+    private final Queue<Message> outMessagesQueue = new ConcurrentLinkedQueue<>();
+
     // коллекция выполняющихся команд создается один раз
-    private Map<Message, Future<List<Client>>> mapOfRunningCommands = new ConcurrentHashMap<>(); //карта выполняющихся команд
+    private final Map<Message, Future<List<Client>>> mapOfRunningCommands = new ConcurrentHashMap<>(); //карта выполняющихся команд
 
     private CommandExecutor commandExecutor;
     private EntityManager entityManager;  // TODO: 15.06.2019 будет автосвязываться
@@ -66,21 +69,12 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
         entityManager = new EntityManager(); // TODO: 15.06.2019 будет автосвязываться
         initInfoBot();
-        //clients = fillWithTestData(); //заполнение тестовыми данными
     }
 
     @Override
     public void getUpdatesAndFillIncomingMsgQueue() {
-        try {
-            newEventsArray = getUpdates();
-        } catch (UnableToGetUpdatesException e) {
-            e.printStackTrace();
-        }
-        try {
-            markIncomingMessagesAsRead(newEventsArray);
-        } catch (UnableToSendMarkAsReadException e) {
-            e.printStackTrace();
-        }
+        newEventsArray = getUpdates();
+        markIncomingMessagesAsRead(newEventsArray);
         fillIncomingMessageQueue(newEventsArray, inMessagesQueue);
     }
 
@@ -92,15 +86,14 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     @Override
     public void sendResponseMessages() {
         fillOutMessagesQueue(mapOfRunningCommands, outMessagesQueue);
-        sendOutMessages(outMessagesQueue);
+        sendOutMessages(outMessagesQueue); //TODO метод должен бросать исключения. Пусть летит Спрингу или перехватывать?
     }
 
     private void initInfoBot() {
-        /* здесь должно быть заполнение очереди комманд и больше ничего, вся остальное должно происходить через
-         * вызоды запланированных методов
-         */
-        Command clientCommand = new Command("c", 1,
-                "Client", "^[0-9]+\\*?$|^\\*[0-9]+$");
+        //^i$|^и$|^ид$|^id$
+        //SELECT * FROM CLIENT WHERE CLIENT_ID = %s
+        Command clientCommand = new Command("^i$|^и$|^ид$|^id$", 1,
+                "SELECT * FROM CLIENT WHERE CLIENT_ID = %s", "^[0-9]+\\*?$|^\\*[0-9]+$");
         Command studentCommand = new Command("s", 1,
                 "Student", "^[0-9]+\\*?$|^\\*[0-9]+$");
         commandExecutor = new CommandExecutor(Arrays.asList(clientCommand, studentCommand), entityManager, executorService);
@@ -170,8 +163,9 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
             Future<List<Client>> clientFuture = mapOfRunningCommands.get(message);
             if (clientFuture.isDone()) {
                 try {
+                    //message.setText(formStringViewOfClientList(clientFuture.get()));
                     message.setText(String.valueOf(clientFuture.get()));
-                } catch (InterruptedException | ExecutionException e) {
+                } catch (InterruptedException | ExecutionException e) { //TODO исключения!! Как правильно сделать?
                     e.printStackTrace();
                 }
                 outMessages.offer(message);
@@ -180,12 +174,16 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         }
     }
 
+    private String formStringViewOfClientList(List<Client> clients) {
+        return null;
+    }
+
     private void sendOutMessages(Queue<Message> outMsgQueue) {
         Message message;
         while ((message = outMsgQueue.poll()) != null) {
             try {
                 sendMessage(message);
-            } catch (UnableToSendMessageException e) {
+            } catch (UnableToSendMessageException e) { //TODO надо ли ловить или пусть летит дальше?
                 e.printStackTrace();
             }
         }
@@ -304,19 +302,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         String s = responseBody.string();
         System.out.println(s); // TODO: 30.05.2019 убрать
         return s;
-    }
-
-    private List<Client> fillWithTestData() { // TODO: 10.06.2019 удалить
-        List<Client> clients = new ArrayList<>();
-        Client client1 = new Client(1, "Ivanov", "Ivan", 23, "ivaniv@mail.ru");
-        Client client2 = new Client(2, "Petrov", "Alex", 34, "petrov@gmail.com");
-        Client client3 = new Client(3, "Sidorov", "Petr", 33, "sidorov@mail.ru");
-        Client client4 = new Client(4, "Tyurin", "Den", 32, "tyurinden@ya.ru");
-        clients.add(client1);
-        clients.add(client2);
-        clients.add(client3);
-        clients.add(client4);
-        return clients;
+//        return responseBody.string();
     }
 
 }

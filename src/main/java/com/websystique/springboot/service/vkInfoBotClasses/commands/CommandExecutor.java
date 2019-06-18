@@ -49,7 +49,7 @@ public final class CommandExecutor {
                                     Queue<Message> outMessages) {
         Message message;
         while ((message = inMessages.poll()) != null) {
-            Command command = validateCommand(message.getText());
+            Command command = validateCommand(message.getText().trim().toLowerCase());
             if (command != null) {
                 mapOfRunningCommands.put(message, command.execute(entityManager, executorService));
             } else {

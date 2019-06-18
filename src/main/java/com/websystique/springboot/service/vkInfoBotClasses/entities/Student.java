@@ -1,11 +1,6 @@
 package com.websystique.springboot.service.vkInfoBotClasses.entities;
 
-public class Student {
-    private long id;
-    private String firstName;
-    private String lastName;
-    private int age;
-    private String email;
+public class Student extends Client {
     private String topic;
 
     public Student(Client client, String topic) {
@@ -18,11 +13,7 @@ public class Student {
     }
 
     public Student(long id, String firstName, String lastName, int age, String email, String topic) {
-        this.id = id;
-        this.firstName = firstName;
-        this.lastName = lastName;
-        this.age = age;
-        this.email = email;
+        super(id, firstName, lastName, age, email);
         this.topic = topic;
     }
 

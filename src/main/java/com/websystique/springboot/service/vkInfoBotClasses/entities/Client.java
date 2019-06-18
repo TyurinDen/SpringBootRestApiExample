@@ -3,11 +3,14 @@ package com.websystique.springboot.service.vkInfoBotClasses.entities;
 import java.util.Objects;
 
 public class Client {
-    private long id;
-    private String firstName;
-    private String lastName;
-    private int age;
-    private String email;
+    protected long id;
+    protected String firstName;
+    protected String lastName;
+    protected int age;
+    protected String email;
+
+    public Client() {
+    }
 
     public Client(long id, String firstName, String lastName, int age, String email) {
         this.id = id;
