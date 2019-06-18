@@ -40,7 +40,11 @@ public class Command {
         return true;
 
     }
-
+/* Чтобы команда была универсальна, надо придумать как аргументы преобразовать в параметры запроса.
+ * То есть каждой команде надо переделать код, который бы список аргументов превращал в параметры запроса
+ * и возвращал сформированный запрос. Передавать код можно лямбдами, то есть получается, что при создании
+ * каждой команды надо будет прописывать код, который из аргументов сформирует параметры запроса.
+ */
     public Future<List<Client>> execute(EntityManager entityManager, ExecutorService executorService) {
         queryString = String.format(queryBasisString, args);
         System.out.println(queryString);
