@@ -14,7 +14,7 @@ public class Command {
     private String[] args;
     private String queryBasisString;
     private String queryString;
-    private String messageText;
+    private String messageText; // TODO: 19.06.2019 ?????????
 
     public Command(String commandNameRegex, int numberOfArgs, String queryBasisString, String... argsRegex) {
         this.commandNameRegex = commandNameRegex;
@@ -23,7 +23,7 @@ public class Command {
         this.argsRegex = argsRegex;
     }
 
-    public boolean validateCommand(String messageText) {
+    public boolean validateCommand(String messageText) { // TODO: 19.06.2019 method name???
         String[] commandComponents = messageText.split(" ");
         if (commandComponents.length < numberOfArgs + 1) {
             return false;
@@ -42,13 +42,13 @@ public class Command {
 
     }
 
-    public String convertSqlQuery(Command command, RequestConverter queryConvertible) {
-        return queryConvertible.convert(command);
-    }
-/* Чтобы команда была универсальна, надо придумать как аргументы преобразовать в параметры запроса.
- * То есть каждой команде надо переделать код, который бы список аргументов превращал в параметры запроса
- * и возвращал сформированный запрос. Передавать код можно лямбдами, то есть получается, что при создании
- * каждой команды надо будет прописывать код, который из аргументов сформирует параметры запроса.
+/* Создаем фабрику команд. Которая по имени команды будет возвращать нужную команду. Каждая команда должна реализовывать
+ * общий для команд интерфейс. CommandExecutor будет передевать фабрике имя команды, фабрика возвращать объект команды.
+ * Далее уже сама команда будет проверять аргументы. СЕ будет таким образом отправлять два разных сообщения - нет команды,
+ * аргументы некорректны.
+ * Таким образом появляется возможность реализовывать команду как угодно, главное реализовать методы интерфейса.
+ * В конструкторе команды останется только два параметра, реджекс имени и количество аргументов.
+ *
  */
     public Future<List<Client>> execute(EntityManager entityManager, ExecutorService executorService) {
         queryString = String.format(queryBasisString, args);

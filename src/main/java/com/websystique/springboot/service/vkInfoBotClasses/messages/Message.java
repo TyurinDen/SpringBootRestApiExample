@@ -32,7 +32,6 @@ public class Message {
     private int randomId;
 
     // Заглушка, использоваться не будет, так как бот с вложениями не работает, только с текстом сообщения
-
     @SerializedName("attachments")
     private List attachmentsList;
 
