@@ -94,6 +94,11 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         //SELECT * FROM CLIENT WHERE CLIENT_ID = %s
         Command clientCommand = new Command("^i$|^и$|^ид$|^id$", 1,
                 "SELECT * FROM CLIENT WHERE CLIENT_ID RLIKE('%s')", "^[0-9]+\\*?$|^\\*[0-9]+$");
+
+        clientCommand.convertSqlQuery(clientCommand, (command) -> {
+            return command.toString();
+        });
+
         Command studentCommand = new Command("s", 1,
                 "Student", "^[0-9]+\\*?$|^\\*[0-9]+$");
         commandExecutor = new CommandExecutor(Arrays.asList(clientCommand, studentCommand), entityManager, executorService);

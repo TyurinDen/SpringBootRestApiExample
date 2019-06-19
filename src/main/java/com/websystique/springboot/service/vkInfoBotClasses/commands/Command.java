@@ -14,6 +14,7 @@ public class Command {
     private String[] args;
     private String queryBasisString;
     private String queryString;
+    private String messageText;
 
     public Command(String commandNameRegex, int numberOfArgs, String queryBasisString, String... argsRegex) {
         this.commandNameRegex = commandNameRegex;
@@ -40,6 +41,10 @@ public class Command {
         return true;
 
     }
+
+    public String convertSqlQuery(Command command, RequestConverter queryConvertible) {
+        return queryConvertible.convert(command);
+    }
 /* Чтобы команда была универсальна, надо придумать как аргументы преобразовать в параметры запроса.
  * То есть каждой команде надо переделать код, который бы список аргументов превращал в параметры запроса
  * и возвращал сформированный запрос. Передавать код можно лямбдами, то есть получается, что при создании
@@ -53,6 +58,18 @@ public class Command {
 //        Query query = entityManager.createNativeQuery(queryString);
 //        return query.getResultList();
 
+    }
+
+    @Override
+    public String toString() {
+        return "Command{" +
+                "commandNameRegex='" + commandNameRegex + '\'' +
+                ", numberOfArgs=" + numberOfArgs +
+                ", argsRegex=" + Arrays.toString(argsRegex) +
+                ", args=" + Arrays.toString(args) +
+                ", queryBasisString='" + queryBasisString + '\'' +
+                ", queryString='" + queryString + '\'' +
+                '}';
     }
 
 }
