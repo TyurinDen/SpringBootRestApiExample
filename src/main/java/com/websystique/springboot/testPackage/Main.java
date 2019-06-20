@@ -6,7 +6,6 @@ import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
 import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
-import com.websystique.springboot.service.vkInfoBotClasses.commands.RequestConverter;
 
 import java.io.IOException;
 import java.util.Map;
@@ -18,16 +17,7 @@ public class Main {
         Command clientCommand = new Command("^i$|^и$|^ид$|^id$", 1,
                 "SELECT * FROM CLIENT WHERE CLIENT_ID RLIKE('%s')", "^[0-9]+\\*?$|^\\*[0-9]+$");
 
-        convertSqlRequest(clientCommand, (c) -> {
-            System.out.println(c.toString());
-            return "";
-        });
     }
-
-    private static void convertSqlRequest(Command command, RequestConverter requestHandler) {
-        requestHandler.convert(command);
-    }
-
 
     private static void handleObject(JsonReader reader) throws IOException {
         reader.beginObject();

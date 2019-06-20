@@ -1,8 +1,13 @@
 package com.websystique.springboot.service.vkInfoBotClasses.commands;
 
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Future;
 
-public interface Executable<T> {
-    boolean validate(String commandName);
-    List<T> execute(EntityManager entityManager);
+import com.websystique.springboot.service.vkInfoBotClasses.entities.Client;
+
+public interface Executable {
+    boolean checkCommand(String messageText);
+
+    Future<List<Client>> execute(EntityManager entityManager, ExecutorService executorService);
 }
