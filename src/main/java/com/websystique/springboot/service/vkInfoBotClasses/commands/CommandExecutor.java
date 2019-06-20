@@ -29,27 +29,11 @@ public final class CommandExecutor {
         commandList.add(command);
     }
 
-//    public void setCommandList(List<Command<?>> commandList) {
-//        this.commandList = commandList;
-//    }
-//
-//    public void setEntityManager(EntityManager entityManager) {
-//        this.entityManager = entityManager;
-//    }
-
-//    public void setIncomingMessages(Queue<Message> incomingMessages) {
-//        this.incomingMessages = incomingMessages;
-//    }
-
-//    public void setOutgoingMessages(Queue<Message> outgoingMessages) {
-//        this.outgoingMessages = outgoingMessages;
-//    }
-
     public void executeCommandsList(Queue<Message> inMessages, Map<Message, Future<List<Client>>> mapOfRunningCommands,
                                     Queue<Message> outMessages) {
         Message message;
         while ((message = inMessages.poll()) != null) {
-            Command command = validateCommand(message.getText().trim().toLowerCase());
+            Command command = getCommand(message.getText().trim().toLowerCase());
             if (command != null) {
                 mapOfRunningCommands.put(message, command.execute(entityManager, executorService));
             } else {
@@ -59,9 +43,9 @@ public final class CommandExecutor {
         }
     }
 
-    private Command validateCommand(String messageText) {
+    private Command getCommand(String messageText) {
         for (Command command : commandList) {
-            if (command.validateCommand(messageText)) {
+            if (command.checkSyntax(messageText)) {
                 return command;
             }
         }

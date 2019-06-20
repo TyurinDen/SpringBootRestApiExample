@@ -4,9 +4,7 @@ import com.google.gson.*;
 import com.websystique.springboot.configs.InfoBotConfig;
 import com.websystique.springboot.service.VkInfoBotService;
 import com.websystique.springboot.service.vkInfoBotClasses.LongPollServer;
-import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
-import com.websystique.springboot.service.vkInfoBotClasses.commands.CommandExecutor;
-import com.websystique.springboot.service.vkInfoBotClasses.commands.EntityManager;
+import com.websystique.springboot.service.vkInfoBotClasses.commands.*;
 import com.websystique.springboot.service.vkInfoBotClasses.entities.Client;
 import com.websystique.springboot.service.vkInfoBotClasses.errors.ResponseFromApiVk;
 import com.websystique.springboot.service.vkInfoBotClasses.exceptions.*;
@@ -40,17 +38,13 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     private final OkHttpClient okHttpClient; //TODO Как реализовать http-клиент? Как статик? Инжектить извне?
     private final InfoBotConfig botConfig;
-
-    private ExecutorService executorService = Executors.newCachedThreadPool();
-
     // очереди сообщений создаются один раз
     // TODO: 22.05.2019 надо ли ограничивать размер очереди?
     private final Queue<Message> inMessagesQueue = new ConcurrentLinkedQueue<>();
     private final Queue<Message> outMessagesQueue = new ConcurrentLinkedQueue<>();
-
     // коллекция выполняющихся команд создается один раз
     private final Map<Message, Future<List<Client>>> mapOfRunningCommands = new ConcurrentHashMap<>(); //карта выполняющихся команд
-
+    private ExecutorService executorService = Executors.newCachedThreadPool();
     private CommandExecutor commandExecutor;
     private EntityManager entityManager;  // TODO: 15.06.2019 будет автосвязываться
     private LongPollServer longPollServer;
@@ -92,11 +86,10 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private void initInfoBot() {
         //^i$|^и$|^ид$|^id$
         //SELECT * FROM CLIENT WHERE CLIENT_ID = %s
-        Command clientCommand = new Command("^i$|^и$|^ид$|^id$", 1,
-                "SELECT * FROM CLIENT WHERE CLIENT_ID RLIKE('%s')", "^[0-9]+\\*?$|^\\*[0-9]+$");
-        Command studentCommand = new Command("s", 1,
-                "Student", "^[0-9]+\\*?$|^\\*[0-9]+$");
-        commandExecutor = new CommandExecutor(Arrays.asList(clientCommand, studentCommand), entityManager, executorService);
+        //// ^[0-9]+\\*?$|^\\*[0-9]+$
+        //Command findClientsById = new FindClientsById();
+        commandExecutor = new CommandExecutor(Arrays.asList(new FindClientsById(), new FindClientByCityAndLastname()),
+                entityManager, executorService);
         //commandExecutor.setCommandList(Arrays.asList(clientCommand, studentCommand));
     }
 

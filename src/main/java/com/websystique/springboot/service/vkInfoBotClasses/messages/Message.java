@@ -6,7 +6,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
-public class Message {
+public class Message { // TODO: 20.06.2019 удалить неиспользующиеся методы
     private int date;
 
     @SerializedName("from_id")
@@ -21,7 +21,7 @@ public class Message {
     private String text;
 
     @SerializedName("conversation_message_id")
-    private int convMessagesId; // conversation_message_id
+    private int convMessagesId;
 
     @SerializedName("fwd_messages")
     private List<FwdMessages> fwdMessagesList = new ArrayList<>();
