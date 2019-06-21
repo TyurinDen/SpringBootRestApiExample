@@ -12,6 +12,7 @@ import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEvent;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEventsArray;
 import okhttp3.*;
+import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -84,13 +85,15 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     private void initInfoBot() {
-        //^i$|^и$|^ид$|^id$
-        //SELECT * FROM CLIENT WHERE CLIENT_ID = %s
-        //// ^[0-9]+\\*?$|^\\*[0-9]+$
-        //Command findClientsById = new FindClientsById();
-        commandExecutor = new CommandExecutor(Arrays.asList(new FindClientsById(), new FindClientByCityAndLastname()),
+        Command findClientsById = new Command("^i$|^и$|^ид$|^id$", 1,
+                new String[]{"^[0-9]+\\*?$|^\\*[0-9]+$"},
+                "SELECT * FROM CLIENT WHERE CLIENT_ID RLIKE('%s');");
+        Command findClientByCityAndLastname = new Command("^cl$|^cln$|^сл$|^слн$", 2,
+                new String[]{"^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$", "^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$"},
+                "SELECT * FROM CLIENT WHERE CITY RLIKE('%s') AND LAST_NAME RLIKE('%s');");
+
+        commandExecutor = new CommandExecutor(Arrays.asList(findClientsById, findClientByCityAndLastname),
                 entityManager, executorService);
-        //commandExecutor.setCommandList(Arrays.asList(clientCommand, studentCommand));
     }
 
     private NewEventsArray getUpdates() throws UnableToGetUpdatesException {

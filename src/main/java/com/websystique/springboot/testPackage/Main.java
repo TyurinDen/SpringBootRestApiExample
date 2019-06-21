@@ -5,8 +5,6 @@ import com.google.common.collect.Multimap;
 import com.google.gson.JsonElement;
 import com.google.gson.stream.JsonReader;
 import com.google.gson.stream.JsonToken;
-import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
-import com.websystique.springboot.service.vkInfoBotClasses.commands.FindClientsById;
 
 import java.io.IOException;
 import java.util.Map;
@@ -15,7 +13,6 @@ public class Main {
     public static Multimap<String, Map<String, JsonElement>> jsonResultMultiMap = ArrayListMultimap.create();
 
     public static void main(String[] args) {
-        Command clientCommand = new FindClientsById();
 
     }
 

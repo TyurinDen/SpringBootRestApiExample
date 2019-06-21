@@ -15,18 +15,10 @@ public final class CommandExecutor {
     private final EntityManager entityManager;
 
     // TODO: 08.06.2019 надо ли делать этот класс синглтоном?
-//    public CommandExecutor() { // TODO: 13.06.2019 Remove! There should be only one constructor!
-//    }
-
     public CommandExecutor(List<Command> commandList, EntityManager entityManager, ExecutorService executorService) {
         this.commandList = commandList;
         this.entityManager = entityManager;
         this.executorService = executorService;
-    }
-
-    // TODO: 12.06.2019 оставить только необходимые методы
-    public void addCommand(Command command) {
-        commandList.add(command);
     }
 
     public void executeCommandsList(Queue<Message> inMessages, Map<Message, Future<List<Client>>> mapOfRunningCommands,
