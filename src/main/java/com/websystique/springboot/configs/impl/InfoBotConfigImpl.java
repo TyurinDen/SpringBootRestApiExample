@@ -11,8 +11,6 @@ import org.springframework.stereotype.Component;
 @Component
 @PropertySource(value = "file:./vk-info-bot.properties", encoding = "UTF-8")
 public class InfoBotConfigImpl implements InfoBotConfig {
-    //TODO Где должна происходить настройка бота?
-    //TODO Где должна происходить инициализация бота?
     private String vkInfoBotClubId;
     private String vkVkInfoBotAccessToken;
     private String vkApiUrl;

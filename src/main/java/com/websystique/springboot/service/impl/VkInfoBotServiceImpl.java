@@ -12,7 +12,6 @@ import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEvent;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEventsArray;
 import okhttp3.*;
-import org.checkerframework.checker.units.qual.C;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -50,7 +49,6 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private EntityManager entityManager;  // TODO: 15.06.2019 будет автосвязываться
     private LongPollServer longPollServer;
     private int ts; //topic start??
-    private NewEventsArray newEventsArray;
 
     @Autowired
     public VkInfoBotServiceImpl(InfoBotConfig infoBotConfig) {
@@ -68,7 +66,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     @Override
     public void getUpdatesAndFillIncomingMsgQueue() {
-        newEventsArray = getUpdates();
+        NewEventsArray newEventsArray = getUpdates();
         markIncomingMessagesAsRead(newEventsArray);
         fillIncomingMessageQueue(newEventsArray, inMessagesQueue);
     }
