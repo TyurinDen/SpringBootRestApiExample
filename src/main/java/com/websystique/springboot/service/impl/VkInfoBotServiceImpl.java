@@ -1,6 +1,7 @@
 package com.websystique.springboot.service.impl;
 
 import com.google.gson.*;
+import com.squareup.okhttp.*;
 import com.websystique.springboot.configs.InfoBotConfig;
 import com.websystique.springboot.service.VkInfoBotService;
 import com.websystique.springboot.service.vkInfoBotClasses.LongPollServer;
@@ -11,7 +12,6 @@ import com.websystique.springboot.service.vkInfoBotClasses.exceptions.*;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEvent;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEventsArray;
-import okhttp3.*;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -52,7 +52,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     @Autowired
     public VkInfoBotServiceImpl(InfoBotConfig infoBotConfig) {
-        okHttpClient = new OkHttpClient().newBuilder().build();
+        okHttpClient = new OkHttpClient();
         botConfig = infoBotConfig;
 
         VK_URL_API = botConfig.getVkApiUrl();
