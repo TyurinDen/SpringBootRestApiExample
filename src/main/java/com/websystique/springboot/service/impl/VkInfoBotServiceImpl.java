@@ -6,7 +6,7 @@ import com.websystique.springboot.configs.InfoBotConfig;
 import com.websystique.springboot.service.VkInfoBotService;
 import com.websystique.springboot.service.vkInfoBotClasses.LongPollServer;
 import com.websystique.springboot.service.vkInfoBotClasses.commands.*;
-import com.websystique.springboot.service.vkInfoBotClasses.entities.Client;
+import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
 import com.websystique.springboot.service.vkInfoBotClasses.errors.ResponseFromApiVk;
 import com.websystique.springboot.service.vkInfoBotClasses.exceptions.*;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
@@ -43,7 +43,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private final Queue<Message> inMessagesQueue = new ConcurrentLinkedQueue<>();
     private final Queue<Message> outMessagesQueue = new ConcurrentLinkedQueue<>();
     // коллекция выполняющихся команд создается один раз
-    private final Map<Message, Future<List<Client>>> mapOfRunningCommands = new ConcurrentHashMap<>(); //карта выполняющихся команд
+    private final Map<Message, Future<List<TestClient>>> mapOfRunningCommands = new ConcurrentHashMap<>(); //карта выполняющихся команд
     private ExecutorService executorService = Executors.newCachedThreadPool();
     private CommandExecutor commandExecutor;
     private EntityManager entityManager;  // TODO: 15.06.2019 будет автосвязываться
@@ -147,14 +147,14 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         }
     }
 
-    private void runCommandQueue(Queue<Message> inMessages, Map<Message, Future<List<Client>>> mapOfRunningCommands,
+    private void runCommandQueue(Queue<Message> inMessages, Map<Message, Future<List<TestClient>>> mapOfRunningCommands,
                                  Queue<Message> outMessages) { //заполнение списка выполняющихся команд
         commandExecutor.executeCommandsList(inMessages, mapOfRunningCommands, outMessages);
     }
 
-    private void fillOutMessagesQueue(Map<Message, Future<List<Client>>> mapOfRunningCommands, Queue<Message> outMessages) {
+    private void fillOutMessagesQueue(Map<Message, Future<List<TestClient>>> mapOfRunningCommands, Queue<Message> outMessages) {
         for (Message message : mapOfRunningCommands.keySet()) {
-            Future<List<Client>> clientFuture = mapOfRunningCommands.get(message);
+            Future<List<TestClient>> clientFuture = mapOfRunningCommands.get(message);
             if (clientFuture.isDone()) {
                 try {
                     //message.setText(formStringViewOfClientList(clientFuture.get()));
@@ -168,7 +168,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         }
     }
 
-    private String formStringViewOfClientList(List<Client> clients) {
+    private String formStringViewOfClientList(List<TestClient> clients) {
         return null;
     }
 

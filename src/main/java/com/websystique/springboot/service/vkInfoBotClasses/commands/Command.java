@@ -1,6 +1,6 @@
 package com.websystique.springboot.service.vkInfoBotClasses.commands;
 
-import com.websystique.springboot.service.vkInfoBotClasses.entities.Client;
+import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
 
 import java.util.Arrays;
 import java.util.List;
@@ -22,7 +22,7 @@ public class Command {
         this.queryBasisString = queryBasisString;
     }
 
-    public Future<List<Client>> execute(EntityManager entityManager, ExecutorService executorService) {
+    public Future<List<TestClient>> execute(EntityManager entityManager, ExecutorService executorService) {
         //queryString = String.format(queryBasisString, args);
         System.out.println(formSqlQueryString(queryBasisString, args));
         return executorService.submit(() -> entityManager.getResultList(queryBasisString));

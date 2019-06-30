@@ -1,6 +1,6 @@
 package com.websystique.springboot.service.vkInfoBotClasses.commands;
 
-import com.websystique.springboot.service.vkInfoBotClasses.entities.Client;
+import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
 
 import java.util.List;
@@ -21,7 +21,7 @@ public final class CommandExecutor {
         this.executorService = executorService;
     }
 
-    public void executeCommandsList(Queue<Message> inMessages, Map<Message, Future<List<Client>>> mapOfRunningCommands,
+    public void executeCommandsList(Queue<Message> inMessages, Map<Message, Future<List<TestClient>>> mapOfRunningCommands,
                                     Queue<Message> outMessages) {
         Message message;
         while ((message = inMessages.poll()) != null) {

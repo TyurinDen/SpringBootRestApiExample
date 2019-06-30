@@ -10,8 +10,6 @@ import org.springframework.stereotype.Service;
 
 import com.websystique.springboot.model.User;
 
-
-
 @Service("userService")
 public class UserServiceImpl implements UserService {
 	
