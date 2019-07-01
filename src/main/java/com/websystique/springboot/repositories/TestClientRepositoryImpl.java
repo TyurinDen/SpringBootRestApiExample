@@ -1,54 +1,46 @@
 package com.websystique.springboot.repositories;
 
 import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
+import org.springframework.data.domain.Example;
+import org.springframework.data.jpa.repository.support.JpaEntityInformation;
+import org.springframework.data.jpa.repository.support.SimpleJpaRepository;
 import org.springframework.stereotype.Repository;
 
 import javax.persistence.EntityManager;
 import javax.persistence.PersistenceContext;
 import javax.persistence.Query;
-import javax.transaction.Transactional;
+import java.util.List;
 
 @Repository
-@Transactional
-public class TestClientRepositoryImpl implements TestClientRepository {
+public class TestClientRepositoryImpl extends SimpleJpaRepository<TestClient, Long> implements TestClientRepository {
 
     @PersistenceContext
     private EntityManager entityManager;
 
-    @Override
-    public void save(TestClient testClient) {
-        entityManager.persist(testClient);
+    public TestClientRepositoryImpl(JpaEntityInformation<TestClient, ?> entityInformation, EntityManager entityManager) {
+        super(entityInformation, entityManager);
+        Example
     }
 
-    @Override
-    public TestClient getById(Long id) {
-        return entityManager.find(TestClient.class, id);
+    public TestClientRepositoryImpl(Class<TestClient> domainClass, EntityManager em) {
+        super(domainClass, em);
     }
 
+
     @Override
-    public TestClient getByFirstName(String firstName) {
+    public List<TestClient> getByFirstName(String firstName) {
         Query query = entityManager.createNamedQuery("getByFirstName", TestClient.class);
         query.setParameter("firstName", firstName);
-        return (TestClient) query.getSingleResult();
+        return query.getResultList();
     }
 
     @Override
-    public Iterable<TestClient> getAll() {
-        return entityManager.createNamedQuery("getAll", TestClient.class).getResultList();
+    public List<TestClient> getClientByFirstNameStartingWith(String firstName) {
+        return null;
     }
 
     @Override
-    public Long count() {
-        return count();
-    }
-
-    @Override
-    public void delete(TestClient entity) {
-        delete(entity);
-    }
-
-    @Override
-    public boolean isExists(Long id) {
-        return isExists(id);
+    public List<TestClient> getByIdWithWildcard(String idWildcard) {
+        return null;
     }
 }

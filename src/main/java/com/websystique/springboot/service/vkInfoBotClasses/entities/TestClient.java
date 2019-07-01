@@ -1,9 +1,6 @@
 package com.websystique.springboot.service.vkInfoBotClasses.entities;
 
-import lombok.AllArgsConstructor;
-import lombok.Getter;
-import lombok.NoArgsConstructor;
-import lombok.Setter;
+import lombok.*;
 
 import javax.persistence.*;
 import java.io.Serializable;
@@ -14,10 +11,12 @@ import java.sql.Date;
 @NamedQueries({
         @NamedQuery(name = "getAll", query = "SELECT tc FROM TestClient tc"),
         @NamedQuery(name = "getByFirstName", query = "SELECT tc FROM TestClient tc WHERE tc.firstName = :firstName")})
+@NamedNativeQuery(name = "getByWildcardId", query = "SELECT cl.client_id, cl.last_name, cl.first_name FROM CLIENT cl " +
+        "WHERE CLIENT_ID RLIKE (':id');")
 @AllArgsConstructor
 @NoArgsConstructor
-@Getter
-@Setter
+@Data
+@Builder
 public class TestClient implements Serializable {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
