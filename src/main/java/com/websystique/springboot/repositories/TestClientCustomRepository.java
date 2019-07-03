@@ -2,8 +2,8 @@ package com.websystique.springboot.repositories;
 
 import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
 
-public interface TestClientRepositoryCustom {
+public interface TestClientCustomRepository {
 
-    Iterable<TestClient> getByIdWithWildcard(String wildcardId);
+    Iterable<TestClient> getByWildcard(String wildcard);
 
 }

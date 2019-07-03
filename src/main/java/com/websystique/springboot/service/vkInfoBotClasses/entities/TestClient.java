@@ -11,13 +11,14 @@ import java.sql.Date;
 @NamedQueries({
         @NamedQuery(name = "getAll", query = "SELECT tc FROM TestClient tc"),
         @NamedQuery(name = "getByFirstName", query = "SELECT tc FROM TestClient tc WHERE tc.firstName = :firstName")})
-@NamedNativeQuery(name = "getByWildcardId", query = "SELECT cl.client_id, cl.last_name, cl.first_name FROM CLIENT cl " +
-        "WHERE CLIENT_ID RLIKE (':id');")
+@NamedNativeQuery(name = "getByWildcard", query = "SELECT * FROM test_clients WHERE :wildcard")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
 @Builder
 public class TestClient implements Serializable {
+    public static final String GET_ALL = "getAll";
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "client_id")
