@@ -4,6 +4,6 @@ import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
 
 public interface TestClientCustomRepository {
 
-    Iterable<TestClient> getByWildcard(String wildcard);
+    Iterable<TestClient> getByCommandFromVkBot(String command);
 
 }
