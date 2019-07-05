@@ -1,19 +1,25 @@
 package com.websystique.springboot.service.vkInfoBotClasses.commands;
 
 import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
+import org.springframework.context.annotation.Bean;
+import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Future;
 
+@Component
 public class Command {
-    private final String commandNameRegex; //regex возможных имен команды
-    private final int numberOfArgs;
-    private final String[] argsRegex;
-    private final String queryBasisString;
+    private String commandNameRegex; //regex возможных имен команды
+    private int numberOfArgs;
+    private String[] argsRegex;
+    private String queryBasisString;
     private String[] args;
     private String queryString;
+
+    public Command() {
+    }
 
     public Command(String commandNameRegex, int numberOfArgs, String[] argsRegex, String queryBasisString) {
         this.commandNameRegex = commandNameRegex;

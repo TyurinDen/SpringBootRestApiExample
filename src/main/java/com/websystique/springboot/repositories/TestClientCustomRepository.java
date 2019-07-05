@@ -1,9 +1,11 @@
 package com.websystique.springboot.repositories;
 
-import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
+import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
+
+import java.util.List;
 
 public interface TestClientCustomRepository {
 
-    Iterable<TestClient> getByCommandFromVkBot(String command);
+    Iterable<List<Object[]>> getByCommandFromVkBot(String messageText, Command command);
 
 }

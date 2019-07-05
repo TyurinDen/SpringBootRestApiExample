@@ -1,6 +1,8 @@
 package com.websystique.springboot.repositories;
 
+import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
 import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Repository;
 
@@ -12,7 +14,7 @@ import java.util.List;
 @Qualifier(value = "TestClientCustomRepositoryImpl")
 @Repository
 public class TestClientCustomRepositoryImpl implements TestClientCustomRepository {
-    final String mainPartOfSqlQuery = "SELECT \n" +
+    final String SQL_QUERY = "SELECT \n" +
             "    cl.client_id,\n" +
             "    cl.last_name,\n" +
             "    cl.first_name,\n" +
@@ -40,6 +42,9 @@ public class TestClientCustomRepositoryImpl implements TestClientCustomRepositor
 
     @PersistenceContext
     private EntityManager entityManager;
+
+    @Autowired
+    Command command;
 
     @Override
     public Iterable<TestClient> getByCommandFromVkBot(String command) {
