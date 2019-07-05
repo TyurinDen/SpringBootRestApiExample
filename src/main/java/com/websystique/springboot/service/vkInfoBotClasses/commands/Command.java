@@ -1,42 +1,18 @@
 package com.websystique.springboot.service.vkInfoBotClasses.commands;
 
-import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
-import org.springframework.context.annotation.Bean;
-import org.springframework.stereotype.Component;
+import lombok.Data;
+import lombok.RequiredArgsConstructor;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Future;
 
-@Component
+@Data
+@RequiredArgsConstructor
 public class Command {
-    private String commandNameRegex; //regex возможных имен команды
-    private int numberOfArgs;
-    private String[] argsRegex;
-    private String queryBasisString;
+    private final String commandNameRegex; //regex возможных имен команды
+    private final int numberOfArgs;
+    private final String[] argsRegex;
+    private final String basisSqlQuery;
     private String[] args;
-    private String queryString;
-
-    public Command() {
-    }
-
-    public Command(String commandNameRegex, int numberOfArgs, String[] argsRegex, String queryBasisString) {
-        this.commandNameRegex = commandNameRegex;
-        this.numberOfArgs = numberOfArgs;
-        this.argsRegex = argsRegex;
-        this.queryBasisString = queryBasisString;
-    }
-
-    public Future<List<TestClient>> execute(EntityManager entityManager, ExecutorService executorService) {
-        //queryString = String.format(queryBasisString, args);
-        System.out.println(formSqlQueryString(queryBasisString, args));
-        return executorService.submit(() -> entityManager.getResultList(queryBasisString));
-
-//        Query query = entityManager.createNativeQuery(queryString);
-//        return query.getResultList();
-
-    }
 
     public boolean checkSyntax(String messageText) {
         String[] commandComponents = messageText.split(" ");
@@ -56,7 +32,11 @@ public class Command {
         return true;
     }
 
-    public String formSqlQueryString(String queryBasisString, String... args) {
+    public String getSqlQuery() {
+        return formSqlQuery(basisSqlQuery, args);
+    }
+
+    private String formSqlQuery(String basisSqlQuery, String... args) {
         String[] argsForSqlQuery = new String[numberOfArgs];
         for (int i = 0; i < numberOfArgs; i++) {
             int index = args[i].indexOf('*');
@@ -68,7 +48,7 @@ public class Command {
                 argsForSqlQuery[i] = '^' + args[i].substring(0, index);
             }
         }
-        return String.format(queryBasisString, argsForSqlQuery);
+        return String.format(basisSqlQuery, argsForSqlQuery);
     }
 
 }
