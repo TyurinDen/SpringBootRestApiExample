@@ -1,6 +1,6 @@
 package com.websystique.springboot.configs.impl;
 
-import com.websystique.springboot.configs.InfoBotConfig;
+import com.websystique.springboot.configs.VkInfoBotConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -10,20 +10,23 @@ import org.springframework.stereotype.Component;
 
 @Component
 @PropertySource(value = "file:./vk-info-bot.properties", encoding = "UTF-8")
-public class InfoBotConfigImpl implements InfoBotConfig {
+public class VkInfoBotConfigImpl implements VkInfoBotConfig {
     private String vkInfoBotClubId;
     private String vkVkInfoBotAccessToken;
+    private String vkVkInfoBotConfirmationToken;
     private String vkApiUrl;
     private String vkApiVersion;
-    private static Logger logger = LoggerFactory.getLogger(InfoBotConfigImpl.class.getName());
+    private static Logger logger = LoggerFactory.getLogger(VkInfoBotConfigImpl.class.getName());
 
     @Autowired
-    public InfoBotConfigImpl(Environment env) {
+    public VkInfoBotConfigImpl(Environment env) {
         try {
             this.vkInfoBotClubId = env.getProperty("vk.info-bot.id");
             logger.info("vkInfoBotClubId: {}", vkInfoBotClubId);
             this.vkVkInfoBotAccessToken = env.getProperty("vk.info-bot.access_token");
             logger.info("vkVkInfoBotAccessToken: {}", vkVkInfoBotAccessToken);
+            this.vkVkInfoBotConfirmationToken = env.getProperty("vk.info-bot.confirmation_token");
+            logger.info("vkVkInfoBotConfirmationToken: {}", vkVkInfoBotConfirmationToken);
             this.vkApiUrl = env.getProperty("vk.apiUrl");
             this.vkApiVersion = env.getProperty("vk.api.version");
         } catch (IllegalStateException ise) {
@@ -39,6 +42,11 @@ public class InfoBotConfigImpl implements InfoBotConfig {
     @Override
     public String getVkInfoBotAccessToken() {
         return vkVkInfoBotAccessToken;
+    }
+
+    @Override
+    public String getVkInfoBotConfirmationToken() {
+        return vkVkInfoBotConfirmationToken;
     }
 
     @Override

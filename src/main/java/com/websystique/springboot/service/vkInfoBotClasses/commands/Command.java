@@ -12,7 +12,7 @@ public class Command {
     private final int numberOfArgs;
     private final String[] argsRegex;
     private final String basisSqlQuery;
-    private String[] args;
+    private String sqlQuery;
 
     public boolean checkSyntax(String messageText) {
         String[] commandComponents = messageText.split(" ");
@@ -23,17 +23,18 @@ public class Command {
             return false;
         }
 
-        args = Arrays.copyOfRange(commandComponents, 1, numberOfArgs + 1);
+        String[] args = Arrays.copyOfRange(commandComponents, 1, numberOfArgs + 1);
         for (int i = 0; i < args.length; i++) {
             if (!args[i].matches(argsRegex[i])) {
                 return false;
             }
         }
+        sqlQuery = formSqlQuery(basisSqlQuery, args);
         return true;
     }
 
     public String getSqlQuery() {
-        return formSqlQuery(basisSqlQuery, args);
+        return sqlQuery;
     }
 
     private String formSqlQuery(String basisSqlQuery, String... args) {

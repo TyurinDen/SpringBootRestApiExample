@@ -11,7 +11,6 @@ import java.sql.Date;
 @NamedQueries({
         @NamedQuery(name = "getAll", query = "SELECT tc FROM TestClient tc"),
         @NamedQuery(name = "getByFirstName", query = "SELECT tc FROM TestClient tc WHERE tc.firstName = :firstName")})
-@NamedNativeQuery(name = "getByWildcard", query = "SELECT * FROM test_clients WHERE :wildcard")
 @AllArgsConstructor
 @NoArgsConstructor
 @Data
@@ -70,4 +69,3 @@ public class TestClient implements Serializable {
     private String mentorFirstName;
 
 }
-

@@ -27,7 +27,7 @@ public final class CommandExecutor {
         while ((message = inMessages.poll()) != null) {
             Command command = getCommand(message.getText().trim().toLowerCase());
             if (command != null) {
-                mapOfRunningCommands.put(message, command.execute(entityManager, executorService));
+                //mapOfRunningCommands.put(message, command.execute(entityManager, executorService));
             } else {
                 message.setText("ERROR: The command is incorrect!"); // TODO: 10.06.2019 справочное сообщение отправляться должно
                 outMessages.offer(message);

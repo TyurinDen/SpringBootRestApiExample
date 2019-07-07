@@ -42,13 +42,6 @@ public class TestClientRepositoryTest {
         assertThat(found.size()).isEqualTo(2);
     }
 
-    @Test
-    public void whenGetByWildcard_thenReturnListOfTestClients() {
-        //List<TestClient> found = (List<TestClient>) clientCustomRepository.getByWildcard("cl.first_name like(\"%a\")");
-        List<TestClient> found = (List<TestClient>) clientCustomRepository.getByWildcard("");
-        assertThat(found.size()).isEqualTo(2);
-    }
-
     @Before
     public void populateDummyUsers() {
         TestClient jamesVax = TestClient.builder().firstName("James").lastName("Vax").build();

@@ -10,22 +10,4 @@ import org.springframework.stereotype.Component;
 @EnableScheduling
 public class ScheduledTasks {
 
-    @Autowired
-    private VkInfoBotService vkInfoBotService;
-
-    @Scheduled(fixedRate = 2_000)
-    private void checkNewEvents() {
-        vkInfoBotService.getUpdatesAndFillIncomingMsgQueue();
-    }
-
-    @Scheduled(fixedRate = 2_000)
-    private void executeCommands() {
-        vkInfoBotService.executeCommands();
-    }
-
-    @Scheduled(fixedRate = 2_000)
-    private void sendResponseMessages() {
-        vkInfoBotService.sendResponseMessages();
-    }
-
 }
