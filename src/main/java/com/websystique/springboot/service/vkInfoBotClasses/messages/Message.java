@@ -19,6 +19,7 @@ public class Message { // TODO: 20.06.2019 удалить неиспользую
     private int id;
 
     private int out;
+
     @SerializedName("peer_id")
     private int peerId;
 
