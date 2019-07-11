@@ -6,10 +6,11 @@ import com.websystique.springboot.configs.VkInfoBotConfig;
 import com.websystique.springboot.repositories.TestClientCustomRepository;
 import com.websystique.springboot.service.VkInfoBotService;
 import com.websystique.springboot.service.vkInfoBotClasses.LongPollServer;
-import com.websystique.springboot.service.vkInfoBotClasses.commands.*;
-import com.websystique.springboot.service.vkInfoBotClasses.entities.TestClient;
+import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
 import com.websystique.springboot.service.vkInfoBotClasses.errors.ResponseFromApiVk;
-import com.websystique.springboot.service.vkInfoBotClasses.exceptions.*;
+import com.websystique.springboot.service.vkInfoBotClasses.exceptions.NoSuchObjectFoundException;
+import com.websystique.springboot.service.vkInfoBotClasses.exceptions.UnableToSendMarkAsReadException;
+import com.websystique.springboot.service.vkInfoBotClasses.exceptions.UnableToSendMessageException;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEvent;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEventsArray;
@@ -20,8 +21,10 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.*;
-import java.util.concurrent.*;
+import java.util.Arrays;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
 
 @Component
 public class VkInfoBotServiceImpl implements VkInfoBotService {
@@ -60,9 +63,9 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private final String VK_BOT_CONFIRMATION_TOKEN;
     private final String VK_BOT_CLUB_ID;
     private final OkHttpClient okHttpClient; //TODO Как реализовать http-клиент? Как статик? Инжектить извне?
-    private TestClientCustomRepository clientCustomRepository;
     private final VkInfoBotConfig botConfig;
-
+    private final MediaType TEXT = MediaType.parse("text/plain; charset=utf-8");
+    private TestClientCustomRepository clientCustomRepository;
     private Set<Command> commandSet;
     private LongPollServer longPollServer;
     private int ts; //topic start??
@@ -94,7 +97,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     @Override
-    public void sendResponseMessage(Message message, String clients) {
+    public void sendResponseMessage(Message message, String responseMessageText) {
 
     }
 
@@ -145,45 +148,46 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         }
         return stringBuilder.toString();
     }
-    //на запрос будет выдано не более пяти результатов
-    //
-    //formTextViewOfClientsList(List<Object[]> objectsList)
-    //sendErrorMessage(Message message)
-    //sendHelpMessage(Message message)
-    //
-    //sendMessage(Message message)
 
-    public void sendMessage(Message message) throws UnableToSendMessageException {
-        HttpUrl.Builder urlBuilder;
-        String responseBodyString;
-        ResponseFromApiVk response;
+    public void sendMessage(Message message) {
+        HttpUrl.Builder urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.send").newBuilder();
+        urlBuilder.addQueryParameter("user_id", String.valueOf(message.getFromId()));
+        //urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId())); //TODO ??????
+        //urlBuilder.addQueryParameter(VK_URL_PARAM_PEER_ID, String.valueOf(message.getPeerId()));
+        urlBuilder.addQueryParameter(VK_URL_PARAM_GROUP_ID, String.valueOf(VK_BOT_CLUB_ID));
+        urlBuilder.addQueryParameter("reply_to", String.valueOf(message.getId()));
+        urlBuilder.addQueryParameter("message", String.valueOf(message.getText()));
+        urlBuilder.addQueryParameter(VK_URL_PARAM_ACCESS_TOKEN, VK_BOT_ACCESS_TOKEN);
+        urlBuilder.addQueryParameter(VK_URL_PARAM_API_VERSION, VK_API_VERSION);
 
+        String url = urlBuilder.build().toString();
+        RequestBody requestBody = RequestBody.create(TEXT, message.getText());
+        Request request = new Request.Builder().url(url).post(requestBody).build();
         try {
-            urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.send").newBuilder();
-            urlBuilder.addQueryParameter("user_id", String.valueOf(message.getFromId()));
-            //urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId())); //TODO ??????
-            //urlBuilder.addQueryParameter(VK_URL_PARAM_PEER_ID, String.valueOf(message.getPeerId()));
-            urlBuilder.addQueryParameter(VK_URL_PARAM_GROUP_ID, String.valueOf(VK_BOT_CLUB_ID));
-            urlBuilder.addQueryParameter("reply_to", String.valueOf(message.getId()));
-            urlBuilder.addQueryParameter("message", String.valueOf(message.getText()));
-            urlBuilder.addQueryParameter(VK_URL_PARAM_ACCESS_TOKEN, VK_BOT_ACCESS_TOKEN);
-            urlBuilder.addQueryParameter(VK_URL_PARAM_API_VERSION, VK_API_VERSION);
-
-            responseBodyString = getResponseBodyFromHttpRequest(urlBuilder.build().toString());
-            response = createJavaObjFromWholeJson(responseBodyString, ResponseFromApiVk.class);
-            if (response == null) {
-                //if (response.getResponse() != 1) {
-                throw new UnableToSendMessageException("Unable to send message! Server response: " + responseBodyString);
+            Response response = okHttpClient.newCall(request).execute();
+            if (!response.isSuccessful()) {
+                ResponseBody responseBody = response.body();
+                if (responseBody != null) {
+                    logger.error("Unable to send message! Server response: " + responseBody.string());
+                }
+                logger.error("Unable to send message! Server response code: " + response.code());
             }
-            System.out.println(responseBodyString); // TODO: 12.06.2019 remove
         } catch (IOException e) {
-            throw new UnableToSendMessageException("Unable to send message! It looks like the Network is down");
-        } catch (NoSuchObjectFoundException e) {
-            throw new UnableToSendMessageException("Unable to send message!", e);
-        } catch (NullPointerException e) {
-            throw new UnableToSendMessageException("General error! Unable to send message!", e);
+            logger.error("Unable to send message! It looks like the Network is down", e);
         }
 
+    }
+
+    private String getResponseBodyFromHttpRequest(String url) throws IOException {
+        Response response = okHttpClient.newCall(new Request.Builder().url(url).build()).execute();
+        ResponseBody responseBody = response.body();
+        if (responseBody == null) {
+            return "";
+        }
+        String s = responseBody.string();
+        System.out.println(s); // TODO: 30.05.2019 убрать
+        return s;
+//        return responseBody.string();
     }
 
     private void markIncomingMessagesAsRead(NewEventsArray updatesArray) throws UnableToSendMarkAsReadException {
@@ -228,17 +232,5 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         }
 
         return gson.fromJson(rootJsonElements.getAsJsonObject(), tClass);
-    }
-
-    private String getResponseBodyFromHttpRequest(String url) throws IOException {
-        Response response = okHttpClient.newCall(new Request.Builder().url(url).build()).execute();
-        ResponseBody responseBody = response.body();
-        if (responseBody == null) {
-            return "";
-        }
-        String s = responseBody.string();
-        System.out.println(s); // TODO: 30.05.2019 убрать
-        return s;
-//        return responseBody.string();
     }
 }

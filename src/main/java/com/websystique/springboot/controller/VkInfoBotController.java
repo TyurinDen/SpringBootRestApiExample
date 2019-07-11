@@ -39,6 +39,7 @@ public class VkInfoBotController {
         if (jsonNode.get("type").asText().equals("confirmation")) {
             return new ResponseEntity<>(vkInfoBotService.getConfirmationToken(), HttpStatus.OK);
         }
+        // TODO: 11.07.2019 дописать, чтобы не было случайных падений
         NewEvent newEvent = objectMapper.readValue(jsonBody, NewEvent.class);
         System.out.println(jsonBody);
         System.out.println(newEvent);
