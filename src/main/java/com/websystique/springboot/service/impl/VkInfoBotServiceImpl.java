@@ -1,26 +1,17 @@
 package com.websystique.springboot.service.impl;
 
-import com.google.gson.*;
 import com.squareup.okhttp.*;
 import com.websystique.springboot.configs.VkInfoBotConfig;
 import com.websystique.springboot.repositories.TestClientCustomRepository;
 import com.websystique.springboot.service.VkInfoBotService;
-import com.websystique.springboot.service.vkInfoBotClasses.LongPollServer;
 import com.websystique.springboot.service.vkInfoBotClasses.commands.Command;
-import com.websystique.springboot.service.vkInfoBotClasses.errors.ResponseFromApiVk;
-import com.websystique.springboot.service.vkInfoBotClasses.exceptions.NoSuchObjectFoundException;
-import com.websystique.springboot.service.vkInfoBotClasses.exceptions.UnableToSendMarkAsReadException;
-import com.websystique.springboot.service.vkInfoBotClasses.exceptions.UnableToSendMessageException;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
-import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEvent;
-import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEventsArray;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
@@ -29,7 +20,7 @@ import java.util.Set;
 @Component
 public class VkInfoBotServiceImpl implements VkInfoBotService {
     private static Logger logger = LoggerFactory.getLogger(VkInfoBotServiceImpl.class.getName());
-    private final String SQL_QUERY = "SELECT \n" +
+    private final String SQL_QUERY = "SELECT \n" + // TODO: 12.07.2019 Добавить упорядочивание по ИД
             "    cl.client_id,\n" +
             "    cl.last_name,\n" +
             "    cl.first_name,\n" +
@@ -53,10 +44,6 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
             "        LEFT JOIN\n" +
             "    user u1 ON cl.owner_mentor_id = u1.user_id\n" +
             "WHERE %s LIMIT 5";
-    private final String VK_URL_PARAM_GROUP_ID = "group_id";
-    private final String VK_URL_PARAM_ACCESS_TOKEN = "access_token";
-    private final String VK_URL_PARAM_API_VERSION = "v";
-    private final String VK_URL_PARAM_PEER_ID = "peer_id";
     private final String VK_URL_API;
     private final String VK_API_VERSION;
     private final String VK_BOT_ACCESS_TOKEN;
@@ -67,8 +54,6 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private final MediaType TEXT = MediaType.parse("text/plain; charset=utf-8");
     private TestClientCustomRepository clientCustomRepository;
     private Set<Command> commandSet;
-    private LongPollServer longPollServer;
-    private int ts; //topic start??
 
     @Autowired
     public VkInfoBotServiceImpl(VkInfoBotConfig vkInfoBotConfig,
@@ -151,6 +136,9 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     private void sendMessage(Message message) {
+        String VK_URL_PARAM_GROUP_ID = "group_id";
+        String VK_URL_PARAM_ACCESS_TOKEN = "access_token";
+        String VK_URL_PARAM_API_VERSION = "v";
         HttpUrl.Builder urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.send").newBuilder();
         urlBuilder.addQueryParameter("user_id", String.valueOf(message.getFromId()));
         urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId())); //TODO ??????
@@ -182,59 +170,4 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     }
 
-    private String getResponseBodyFromHttpRequest(String url) throws IOException {
-        Response response = okHttpClient.newCall(new Request.Builder().url(url).build()).execute();
-        ResponseBody responseBody = response.body();
-        if (responseBody == null) {
-            return "";
-        }
-        String s = responseBody.string();
-        System.out.println(s); // TODO: 30.05.2019 убрать
-        return s;
-//        return responseBody.string();
-    }
-
-    private void markIncomingMessagesAsRead(NewEventsArray updatesArray) throws UnableToSendMarkAsReadException {
-        HttpUrl.Builder urlBuilder;
-        String responseBodyString;
-        ResponseFromApiVk response;
-
-        try {
-            for (NewEvent updatesObject : updatesArray.getNewEventsList()) {
-                urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.markAsRead").newBuilder();
-                urlBuilder.addQueryParameter(VK_URL_PARAM_PEER_ID, String.valueOf(updatesObject.getMessage().getPeerId()));
-                urlBuilder.addQueryParameter(VK_URL_PARAM_GROUP_ID, String.valueOf(updatesObject.getGroupId()));
-                urlBuilder.addQueryParameter(VK_URL_PARAM_ACCESS_TOKEN, botConfig.getVkInfoBotAccessToken());
-                urlBuilder.addQueryParameter(VK_URL_PARAM_API_VERSION, botConfig.getVkApiVersion());
-
-                responseBodyString = getResponseBodyFromHttpRequest(urlBuilder.build().toString());
-                response = createJavaObjFromWholeJson(responseBodyString, ResponseFromApiVk.class);
-                if (response.getResponse() != 1) {
-                    throw new UnableToSendMarkAsReadException("Unable to send markAsRead! Server response: "
-                            + responseBodyString);
-                }
-                System.out.println(responseBodyString); // TODO: 11.06.2019 убрать
-            }
-        } catch (IOException e) {
-            throw new UnableToSendMarkAsReadException("Unable to send markAsRead! It looks like the Network is down", e);
-        } catch (NoSuchObjectFoundException e) {
-            throw new UnableToSendMarkAsReadException("Unable to send markAsRead!", e);
-        } catch (NullPointerException e) {
-            throw new UnableToSendMarkAsReadException("General error! Unable to send markAsRead", e);
-        }
-    }
-
-    private <T> T createJavaObjFromWholeJson(String jsonString, Class<T> tClass) {
-        Gson gson = new GsonBuilder().serializeNulls().create();
-        JsonParser parser = new JsonParser();
-        JsonElement rootJsonElements;
-
-        try {
-            rootJsonElements = parser.parse(jsonString);
-        } catch (JsonIOException | JsonSyntaxException e) {
-            throw new NoSuchObjectFoundException(String.format("Parsing JSON failed. JSON: '%s'", jsonString), e);
-        }
-
-        return gson.fromJson(rootJsonElements.getAsJsonObject(), tClass);
-    }
 }

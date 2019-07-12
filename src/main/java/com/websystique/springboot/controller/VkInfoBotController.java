@@ -18,7 +18,7 @@ import org.springframework.web.bind.annotation.RestController;
 import java.io.IOException;
 
 @RestController
-@RequestMapping("/vkInfoBot")
+@RequestMapping("/vk_info_bot")
 public class VkInfoBotController {
 
     private final VkInfoBotService vkInfoBotService;
@@ -34,22 +34,21 @@ public class VkInfoBotController {
         objectMapper.registerModule(module);
     }
 
-    @RequestMapping(value = "/getClients", method = RequestMethod.POST)
+    @RequestMapping(value = "/get_clients", method = RequestMethod.POST)
     public ResponseEntity<String> listOfClients(@RequestBody String jsonBody) throws IOException {
         JsonNode jsonNode = objectMapper.readTree(jsonBody);
+        System.out.println(jsonBody);
         if (jsonNode.get("type").asText().equals("confirmation")) {
             return new ResponseEntity<>(vkInfoBotService.getConfirmationToken(), HttpStatus.OK);
         }
 
-        NewEvent newEvent; // TODO: 12.07.2019 переделать
         if (jsonNode.get("type").asText().equals("message_new")) {
-            newEvent = objectMapper.readValue(jsonBody, NewEvent.class);
+            NewEvent newEvent = objectMapper.readValue(jsonBody, NewEvent.class);
             Message message = newEvent.getMessage();
 //            vkInfoBotService.sendResponseMessage(message, vkInfoBotService.findClients(message.getText()));
             vkInfoBotService.sendResponseMessage(message, "TEST MESSAGE");
         }
         System.out.println(jsonBody); // TODO: 12.07.2019 убрать
-//        System.out.println(newEvent);
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
