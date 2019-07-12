@@ -98,7 +98,8 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     @Override
     public void sendResponseMessage(Message message, String responseMessageText) {
-
+        message.setText(responseMessageText);
+        sendMessage(message);
     }
 
     @Override
@@ -149,11 +150,10 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         return stringBuilder.toString();
     }
 
-    public void sendMessage(Message message) {
+    private void sendMessage(Message message) {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.send").newBuilder();
         urlBuilder.addQueryParameter("user_id", String.valueOf(message.getFromId()));
-        //urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId())); //TODO ??????
-        //urlBuilder.addQueryParameter(VK_URL_PARAM_PEER_ID, String.valueOf(message.getPeerId()));
+        urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId())); //TODO ??????
         urlBuilder.addQueryParameter(VK_URL_PARAM_GROUP_ID, String.valueOf(VK_BOT_CLUB_ID));
         urlBuilder.addQueryParameter("reply_to", String.valueOf(message.getId()));
         urlBuilder.addQueryParameter("message", String.valueOf(message.getText()));
@@ -163,17 +163,21 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         String url = urlBuilder.build().toString();
         RequestBody requestBody = RequestBody.create(TEXT, message.getText());
         Request request = new Request.Builder().url(url).post(requestBody).build();
+        String responseBodyString = "No response body!";
         try {
             Response response = okHttpClient.newCall(request).execute();
-            if (!response.isSuccessful()) {
-                ResponseBody responseBody = response.body();
-                if (responseBody != null) {
-                    logger.error("Unable to send message! Server response: " + responseBody.string());
-                }
-                logger.error("Unable to send message! Server response code: " + response.code());
+            ResponseBody responseBody = response.body();
+            if (responseBody != null) {
+                responseBodyString = responseBody.string();
+                logger.info("Response from API VK: " + responseBodyString);
             }
-        } catch (IOException e) {
-            logger.error("Unable to send message! It looks like the Network is down", e);
+
+            if (!response.isSuccessful()) {
+                logger.error(String.format("Unable to send message! Server response: %s, response code: %s",
+                        responseBodyString, response.code()));
+            }
+        } catch (Exception e) {
+            logger.error("Unable to send message! ", e);
         }
 
     }

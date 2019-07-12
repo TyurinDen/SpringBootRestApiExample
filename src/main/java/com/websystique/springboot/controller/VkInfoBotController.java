@@ -5,6 +5,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.module.SimpleModule;
 import com.websystique.springboot.service.VkInfoBotService;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.CustomNewEventDeserializer;
+import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
 import com.websystique.springboot.service.vkInfoBotClasses.messages.NewEvent;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
@@ -39,10 +40,16 @@ public class VkInfoBotController {
         if (jsonNode.get("type").asText().equals("confirmation")) {
             return new ResponseEntity<>(vkInfoBotService.getConfirmationToken(), HttpStatus.OK);
         }
-        // TODO: 11.07.2019 дописать, чтобы не было случайных падений
-        NewEvent newEvent = objectMapper.readValue(jsonBody, NewEvent.class);
-        System.out.println(jsonBody);
-        System.out.println(newEvent);
+
+        NewEvent newEvent; // TODO: 12.07.2019 переделать
+        if (jsonNode.get("type").asText().equals("message_new")) {
+            newEvent = objectMapper.readValue(jsonBody, NewEvent.class);
+            Message message = newEvent.getMessage();
+//            vkInfoBotService.sendResponseMessage(message, vkInfoBotService.findClients(message.getText()));
+            vkInfoBotService.sendResponseMessage(message, "TEST MESSAGE");
+        }
+        System.out.println(jsonBody); // TODO: 12.07.2019 убрать
+//        System.out.println(newEvent);
         return new ResponseEntity<>("ok", HttpStatus.OK);
     }
 
