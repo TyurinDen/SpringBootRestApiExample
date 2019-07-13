@@ -56,16 +56,16 @@ public class TestClient implements Serializable {
     @Column(name = "birth_date")
     private Date birthDate;
 
-    @Column(name = "manager_lastName")
+    @Column(name = "manager_last_name")
     private String managerLastName;
 
-    @Column(name = "manager_firstName")
+    @Column(name = "manager_first_name")
     private String managerFirstName;
 
-    @Column(name = "mentor_lastName")
+    @Column(name = "mentor_last_name")
     private String mentorLastName;
 
-    @Column(name = "mentor_firstName")
+    @Column(name = "mentor_first_name")
     private String mentorFirstName;
 
 }

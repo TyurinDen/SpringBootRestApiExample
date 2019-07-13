@@ -20,7 +20,7 @@ import java.util.Set;
 @Component
 public class VkInfoBotServiceImpl implements VkInfoBotService {
     private static Logger logger = LoggerFactory.getLogger(VkInfoBotServiceImpl.class.getName());
-    private final String SQL_QUERY = "SELECT \n" + // TODO: 12.07.2019 Добавить упорядочивание по ИД
+    private final String SQL_QUERY = "SELECT \n" + // TODO: 12.07.2019 Добавить упорядочивание по фамилии
             "    cl.client_id,\n" +
             "    cl.last_name,\n" +
             "    cl.first_name,\n" +
@@ -43,13 +43,13 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
             "    user u ON cl.owner_user_id = u.user_id\n" +
             "        LEFT JOIN\n" +
             "    user u1 ON cl.owner_mentor_id = u1.user_id\n" +
-            "WHERE %s LIMIT 5";
+            "WHERE ";
     private final String VK_URL_API;
     private final String VK_API_VERSION;
     private final String VK_BOT_ACCESS_TOKEN;
     private final String VK_BOT_CONFIRMATION_TOKEN;
     private final String VK_BOT_CLUB_ID;
-    private final OkHttpClient okHttpClient; //TODO Как реализовать http-клиент? Как статик? Инжектить извне?
+    private final OkHttpClient okHttpClient;
     private final VkInfoBotConfig botConfig;
     private final MediaType TEXT = MediaType.parse("text/plain; charset=utf-8");
     private TestClientCustomRepository clientCustomRepository;
@@ -64,6 +64,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
                 new String[]{"^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$", "^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$"},
                 SQL_QUERY + "CITY RLIKE('%s') AND LAST_NAME RLIKE('%s')");
         commandSet = new HashSet<>(Arrays.asList(findById, findByCityAndLastName));
+
         this.clientCustomRepository = clientCustomRepository;
 
         okHttpClient = new OkHttpClient();
@@ -110,6 +111,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         return null;
     }
 
+    //TODO возвращать лист стрингов с клиентами, так как слишком длинную строку отправить в ВК не получится, ограничение 4096 символов
     private String formTextViewOfClientList(List<Object[]> clients) {
         String[] prefixes = new String[]{"ID", "Фамилия", "Имя", "Email", "Телефон", "Город", "Страна", "Описание", "Комментарий",
                 "Состояние", "Отложенный комментарий", "Дата рождения", "Менеджер", "Ментор"};
@@ -135,18 +137,16 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         return stringBuilder.toString();
     }
 
+    //TODO каждого клиента отправлять отдельным сообщением
     private void sendMessage(Message message) {
-        String VK_URL_PARAM_GROUP_ID = "group_id";
-        String VK_URL_PARAM_ACCESS_TOKEN = "access_token";
-        String VK_URL_PARAM_API_VERSION = "v";
         HttpUrl.Builder urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.send").newBuilder();
         urlBuilder.addQueryParameter("user_id", String.valueOf(message.getFromId()));
-        urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId())); //TODO ??????
-        urlBuilder.addQueryParameter(VK_URL_PARAM_GROUP_ID, String.valueOf(VK_BOT_CLUB_ID));
+        urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId()));
+        urlBuilder.addQueryParameter("group_id", String.valueOf(VK_BOT_CLUB_ID));
         urlBuilder.addQueryParameter("reply_to", String.valueOf(message.getId()));
         urlBuilder.addQueryParameter("message", String.valueOf(message.getText()));
-        urlBuilder.addQueryParameter(VK_URL_PARAM_ACCESS_TOKEN, VK_BOT_ACCESS_TOKEN);
-        urlBuilder.addQueryParameter(VK_URL_PARAM_API_VERSION, VK_API_VERSION);
+        urlBuilder.addQueryParameter("access_token", VK_BOT_ACCESS_TOKEN);
+        urlBuilder.addQueryParameter("v", VK_API_VERSION);
 
         String url = urlBuilder.build().toString();
         RequestBody requestBody = RequestBody.create(TEXT, message.getText());
@@ -161,7 +161,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
             }
 
             if (!response.isSuccessful()) {
-                logger.error(String.format("Unable to send message! Server response: %s, response code: %s",
+                logger.error(String.format("Unable to send message! Server response: %s, response code: %d",
                         responseBodyString, response.code()));
             }
         } catch (Exception e) {

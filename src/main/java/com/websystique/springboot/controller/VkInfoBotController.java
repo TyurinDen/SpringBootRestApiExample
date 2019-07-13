@@ -45,8 +45,8 @@ public class VkInfoBotController {
         if (jsonNode.get("type").asText().equals("message_new")) {
             NewEvent newEvent = objectMapper.readValue(jsonBody, NewEvent.class);
             Message message = newEvent.getMessage();
-//            vkInfoBotService.sendResponseMessage(message, vkInfoBotService.findClients(message.getText()));
-            vkInfoBotService.sendResponseMessage(message, "TEST MESSAGE");
+            vkInfoBotService.sendResponseMessage(message, vkInfoBotService.findClients(message.getText()));
+//            vkInfoBotService.sendResponseMessage(message, "TEST MESSAGE");
         }
         System.out.println(jsonBody); // TODO: 12.07.2019 убрать
         return new ResponseEntity<>("ok", HttpStatus.OK);
