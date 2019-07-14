@@ -12,10 +12,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
+import java.util.*;
 
 @Component
 public class VkInfoBotServiceImpl implements VkInfoBotService {
@@ -83,22 +80,23 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     @Override
-    public void sendResponseMessage(Message message, String responseMessageText) {
-        message.setText(responseMessageText);
+    public void sendResponseMessage(Message message, Iterable<String> messages) {
+        //TODO каждого найденного клиента отправлять отдельным сообщением
+//        message.setText(responseMessageText);
         sendMessage(message);
     }
 
     @Override
-    public String findClients(String messageText) {
+    public List<String> findClients(String messageText) {
         Command command = getCommand(messageText.trim().toLowerCase());
         if (command != null) {
             List<Object[]> clientList = clientCustomRepository.getClients(command.getSqlQuery());
             if (clientList.isEmpty()) {
-                return "Ничего не найдено"; // TODO: 10.07.2019 переделать строки в константы
+                return Arrays.asList("Ничего не найдено"); // TODO: 10.07.2019 переделать строки в константы
             }
             return formTextViewOfClientList(clientList);
         } else {
-            return "Команда некорректна";
+            return Arrays.asList("Команда некорректна");
         }
     }
 
@@ -111,12 +109,12 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         return null;
     }
 
-    //TODO возвращать лист стрингов с клиентами, так как слишком длинную строку отправить в ВК не получится, ограничение 4096 символов
-    private String formTextViewOfClientList(List<Object[]> clients) {
+    private List<String> formTextViewOfClientList(List<Object[]> clients) {
         String[] prefixes = new String[]{"ID", "Фамилия", "Имя", "Email", "Телефон", "Город", "Страна", "Описание", "Комментарий",
                 "Состояние", "Отложенный комментарий", "Дата рождения", "Менеджер", "Ментор"};
-        StringBuilder stringBuilder = new StringBuilder();
+        List<String> clientsList = new ArrayList<>();
         for (Object[] objects : clients) {
+            StringBuilder stringBuilder = new StringBuilder();
             stringBuilder.append("************************** CLIENT **************************\n");
             for (int i = 0; i < 12; i++) {
                 if (objects[i] != null) {
@@ -133,11 +131,12 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
                     stringBuilder.append(" ").append(prefixes[j]).append(": ").append("Не указано").append("\n");
                 }
             }
+            stringBuilder.append("\n\n");
+            clientsList.add(stringBuilder.toString());
         }
-        return stringBuilder.toString();
+        return clientsList;
     }
 
-    //TODO каждого клиента отправлять отдельным сообщением
     private void sendMessage(Message message) {
         HttpUrl.Builder urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.send").newBuilder();
         urlBuilder.addQueryParameter("user_id", String.valueOf(message.getFromId()));

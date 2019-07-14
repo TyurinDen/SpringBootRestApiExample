@@ -4,10 +4,10 @@ import com.websystique.springboot.service.vkInfoBotClasses.messages.Message;
 
 public interface VkInfoBotService {
 
-    String findClients(String messageText);
+    Iterable<String> findClients(String messageText);
 
     String getConfirmationToken();
 
-    void sendResponseMessage(Message message, String clients);
+    void sendResponseMessage(Message message, Iterable<String> clients);
 
 }
