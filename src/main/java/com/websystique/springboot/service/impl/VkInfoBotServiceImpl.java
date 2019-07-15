@@ -80,10 +80,14 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     @Override
-    public void sendResponseMessage(Message message, Iterable<String> messages) {
-        //TODO каждого найденного клиента отправлять отдельным сообщением
+    public void sendResponseMessage(Message message, Iterable<String> clients) {
+        //TODO каждого найденного клиента отправлять отдельным запросом к АПИ
+        for (String client: clients) {
+            message.setText(client);
+            sendMessage(message);
+        }
 //        message.setText(responseMessageText);
-        sendMessage(message);
+//        sendMessage(message);
     }
 
     @Override
