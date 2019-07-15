@@ -56,10 +56,10 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     public VkInfoBotServiceImpl(VkInfoBotConfig vkInfoBotConfig,
                                 @Qualifier("TestClientCustomRepositoryImpl") TestClientCustomRepository clientCustomRepository) {
         Command findById = new Command("^i$|^и$|^ид$|^id$", 1,
-                new String[]{"^[0-9]+\\*?$|^\\*[0-9]+$"}, SQL_QUERY + "CLIENT_ID RLIKE('%s') LIMIT %d");
+                new String[]{"^[0-9]+\\*?$|^\\*[0-9]+$"}, SQL_QUERY + "CL.CLIENT_ID RLIKE('%s') LIMIT %s");
         Command findByCityAndLastName = new Command("^cl$|^cln$|^сл$|^слн$", 2,
                 new String[]{"^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$", "^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$"},
-                SQL_QUERY + "CITY RLIKE('%s') AND LAST_NAME RLIKE('%s') LIMIT %d");
+                SQL_QUERY + "CL.CITY RLIKE('%s') AND CL.LAST_NAME RLIKE('%s') LIMIT %s");
         commandSet = new HashSet<>(Arrays.asList(findById, findByCityAndLastName));
 
         this.clientCustomRepository = clientCustomRepository;
@@ -93,6 +93,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         final String INCORRECT_COMMAND = "Команда некорректна";
         Command command = getCommand(messageText.trim().toLowerCase());
         if (command != null) {
+            System.out.println(command.getSqlQuery());
             List<Object[]> clientList = clientCustomRepository.getClients(command.getSqlQuery());
             if (clientList.isEmpty()) {
                 return Arrays.asList(NOTHING_FOUND);
@@ -104,8 +105,8 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     @Override
-    public void sendHelpMessage(Message message) {
-        final String HELP_MESSAGE = ">>>>>>>>>>>> VkInfoBot - поиск клиентов в CRM <<<<<<<<<<<<\n\n" +
+    public void sendHelpMessage(Message message) { // TODO: 15.07.2019 дописать справку, чтобы было понятно однозначно
+        final String HELP_MESSAGE = ">>>>>>>>>>>>>>>>>>>> VkInfoBot - поиск клиентов в CRM <<<<<<<<<<<<<<<<<<<<\n\n" +
                 "Бот понимает следующие команды (регистр символов игнорируется):\n" +
                 "id (i, ид, и): поиск по идентефикатору.\n" +
                 "id 123: найти клиента с ID == 123.\n" +

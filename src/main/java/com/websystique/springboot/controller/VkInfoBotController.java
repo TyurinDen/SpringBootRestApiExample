@@ -36,7 +36,7 @@ public class VkInfoBotController {
 
     @RequestMapping(value = "/get_clients", method = RequestMethod.POST)
     public ResponseEntity<String> listOfClients(@RequestBody String jsonBody) throws IOException {
-        final String HELP_MESSAGE_REGEX = "^начать$|^help$|^помощь$|^[?]+$|^справка$|^man vkinfobot$|^man bot$";
+        final String HELP_MESSAGE_REGEX = "^начать$|^help$|^помощь$|^[?]+$|^справка$|^test$|^man bot$|^hello$|^как$";
         JsonNode jsonNode = objectMapper.readTree(jsonBody);
         System.out.println(jsonBody);
         if (jsonNode.get("type").asText().equals("confirmation")) {

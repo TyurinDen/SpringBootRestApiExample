@@ -11,9 +11,10 @@ public class Command {
     private final String commandNameRegex; //regex возможных имен команды
     private final int numberOfArgs;
     private final String[] argsRegex;
-    private final String RESULT_LIMIT_REGEX = "^[1-9]{1,3}$";
-    private int resultLimit;
+    private final String RESULT_LIMIT_REGEX = "^0*[0-9]{1,3}$";
+    private final int MAX_NUMBER_OF_RESULTS = 20;
     private final String basisSqlQuery;
+    private int resultLimit;
     private String sqlQuery;
 
     public boolean checkSyntax(String messageText) {
@@ -24,11 +25,15 @@ public class Command {
         if (!commandComponents[0].matches(commandNameRegex)) {
             return false;
         }
+
+        //TODO переделать! считывать параметр из конфиг файла!
+        resultLimit = MAX_NUMBER_OF_RESULTS;
         if (commandComponents.length > numberOfArgs + 1) {
             if (commandComponents[numberOfArgs + 1].matches(RESULT_LIMIT_REGEX)) {
                 resultLimit = Integer.valueOf(commandComponents[numberOfArgs + 1]);
-            } else {
-                resultLimit = 20; //TODO переделать! считывать параметр из конфиг файла!
+                if (resultLimit > MAX_NUMBER_OF_RESULTS) {
+                    resultLimit = MAX_NUMBER_OF_RESULTS;
+                }
             }
         }
 
@@ -47,7 +52,7 @@ public class Command {
     }
 
     private String formSqlQuery(String basisSqlQuery, String... args) {
-        String[] argsForSqlQuery = new String[numberOfArgs];
+        String[] argsForSqlQuery = new String[numberOfArgs + 1];
         for (int i = 0; i < numberOfArgs; i++) {
             int index = args[i].indexOf('*');
             if (index < 0) {
@@ -58,6 +63,7 @@ public class Command {
                 argsForSqlQuery[i] = '^' + args[i].substring(0, index);
             }
         }
+        argsForSqlQuery[numberOfArgs] = String.valueOf(resultLimit);
         return String.format(basisSqlQuery, argsForSqlQuery);
     }
 
