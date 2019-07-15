@@ -11,6 +11,8 @@ public class Command {
     private final String commandNameRegex; //regex возможных имен команды
     private final int numberOfArgs;
     private final String[] argsRegex;
+    private final String RESULT_LIMIT_REGEX = "^[1-9]{1,3}$";
+    private int resultLimit;
     private final String basisSqlQuery;
     private String sqlQuery;
 
@@ -21,6 +23,13 @@ public class Command {
         }
         if (!commandComponents[0].matches(commandNameRegex)) {
             return false;
+        }
+        if (commandComponents.length > numberOfArgs + 1) {
+            if (commandComponents[numberOfArgs + 1].matches(RESULT_LIMIT_REGEX)) {
+                resultLimit = Integer.valueOf(commandComponents[numberOfArgs + 1]);
+            } else {
+                resultLimit = 20; //TODO переделать! считывать параметр из конфиг файла!
+            }
         }
 
         String[] args = Arrays.copyOfRange(commandComponents, 1, numberOfArgs + 1);

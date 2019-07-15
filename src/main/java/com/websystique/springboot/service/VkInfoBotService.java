@@ -10,4 +10,6 @@ public interface VkInfoBotService {
 
     void sendResponseMessage(Message message, Iterable<String> clients);
 
+    void sendHelpMessage(Message message);
+
 }

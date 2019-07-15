@@ -56,10 +56,10 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     public VkInfoBotServiceImpl(VkInfoBotConfig vkInfoBotConfig,
                                 @Qualifier("TestClientCustomRepositoryImpl") TestClientCustomRepository clientCustomRepository) {
         Command findById = new Command("^i$|^и$|^ид$|^id$", 1,
-                new String[]{"^[0-9]+\\*?$|^\\*[0-9]+$"}, SQL_QUERY + "CLIENT_ID RLIKE('%s')");
+                new String[]{"^[0-9]+\\*?$|^\\*[0-9]+$"}, SQL_QUERY + "CLIENT_ID RLIKE('%s') LIMIT %d");
         Command findByCityAndLastName = new Command("^cl$|^cln$|^сл$|^слн$", 2,
                 new String[]{"^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$", "^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$"},
-                SQL_QUERY + "CITY RLIKE('%s') AND LAST_NAME RLIKE('%s')");
+                SQL_QUERY + "CITY RLIKE('%s') AND LAST_NAME RLIKE('%s') LIMIT %d");
         commandSet = new HashSet<>(Arrays.asList(findById, findByCityAndLastName));
 
         this.clientCustomRepository = clientCustomRepository;
@@ -81,27 +81,48 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     @Override
     public void sendResponseMessage(Message message, Iterable<String> clients) {
-        //TODO каждого найденного клиента отправлять отдельным запросом к АПИ
-        for (String client: clients) {
+        for (String client : clients) {
             message.setText(client);
             sendMessage(message);
         }
-//        message.setText(responseMessageText);
-//        sendMessage(message);
     }
 
     @Override
     public List<String> findClients(String messageText) {
+        final String NOTHING_FOUND = "Ничего не найдено";
+        final String INCORRECT_COMMAND = "Команда некорректна";
         Command command = getCommand(messageText.trim().toLowerCase());
         if (command != null) {
             List<Object[]> clientList = clientCustomRepository.getClients(command.getSqlQuery());
             if (clientList.isEmpty()) {
-                return Arrays.asList("Ничего не найдено"); // TODO: 10.07.2019 переделать строки в константы
+                return Arrays.asList(NOTHING_FOUND);
             }
             return formTextViewOfClientList(clientList);
         } else {
-            return Arrays.asList("Команда некорректна");
+            return Arrays.asList(INCORRECT_COMMAND);
         }
+    }
+
+    @Override
+    public void sendHelpMessage(Message message) {
+        final String HELP_MESSAGE = ">>>>>>>>>>>> VkInfoBot - поиск клиентов в CRM <<<<<<<<<<<<\n\n" +
+                "Бот понимает следующие команды (регистр символов игнорируется):\n" +
+                "id (i, ид, и): поиск по идентефикатору.\n" +
+                "id 123: найти клиента с ID == 123.\n" +
+                "id *123: найти клиента с ID, заканчивающимся на 123.\n" +
+                "id 123*: найти клиента с ID, начинающимся на 123.\n\n" +
+                "cl (cln, сл, слн): поиск по городу и фамилии.\n" +
+                "cl Москва Иванов: найти клиентов из Москвы с фамилией \n" +
+                "Иванов.\n" +
+                "cl М* И*: найти клиентов из города, название которого,\n" +
+                "начинается на \'м\', с фамилией, начинающейся на \'и\'.\n" +
+                "Варианты аргументов команды те же, что и при поиске по\n" +
+                "идентефикатору.\n\n" +
+                "Количество найденных клиентов ограничено по умолчанию \n" +
+                "двадцатью (20), но его можно уменьшить, передав еще один\n" +
+                "аргумент команде, например: id *123 5";
+        message.setText(HELP_MESSAGE);
+        sendMessage(message);
     }
 
     private Command getCommand(String messageText) {
@@ -135,7 +156,6 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
                     stringBuilder.append(" ").append(prefixes[j]).append(": ").append("Не указано").append("\n");
                 }
             }
-            stringBuilder.append("\n\n");
             clientsList.add(stringBuilder.toString());
         }
         return clientsList;
@@ -172,5 +192,4 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         }
 
     }
-
 }
