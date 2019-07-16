@@ -81,6 +81,8 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     @Override
     public void sendResponseMessage(Message message, Iterable<String> clients) {
+        //TODO определять размер отправляемого сообщения, чтобы отправлять несколько сообщений за один раз
+        //TODO возможно следует хранить клиентов в сете, а не листе
         for (String client : clients) {
             message.setText(client);
             sendMessage(message);
@@ -115,13 +117,11 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
                 "cl (cln, сл, слн): поиск по городу и фамилии.\n" +
                 "cl Москва Иванов: найти клиентов из Москвы с фамилией \n" +
                 "Иванов.\n" +
-                "cl М* И*: найти клиентов из города, название которого,\n" +
-                "начинается на \'м\', с фамилией, начинающейся на \'и\'.\n" +
-                "Варианты аргументов команды те же, что и при поиске по\n" +
-                "идентефикатору.\n\n" +
-                "Количество найденных клиентов ограничено по умолчанию \n" +
-                "двадцатью (20), но его можно уменьшить, передав еще один\n" +
-                "аргумент команде, например: id *123 5";
+                "cl М* И*: найти клиентов из города, начинающегося на \'м\',\n" +
+                "с фамилией, начинающейся на \'и\'. И так далее.\n" +
+                "Количество найденных клиентов ограничено двадцатью (20),\n" +
+                "но его можно уменьшить, передав еще один аргумент команде,\n" +
+                "например: id *123 5";
         message.setText(HELP_MESSAGE);
         sendMessage(message);
     }
@@ -136,6 +136,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     private List<String> formTextViewOfClientList(List<Object[]> clients) {
+        //TODO переделать, чтобы вывод был компактнее
         String[] prefixes = new String[]{"ID", "Фамилия", "Имя", "Email", "Телефон", "Город", "Страна", "Описание", "Комментарий",
                 "Состояние", "Отложенный комментарий", "Дата рождения", "Менеджер", "Ментор"};
         List<String> clientsList = new ArrayList<>();
