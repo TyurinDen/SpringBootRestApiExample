@@ -8,7 +8,7 @@ public interface VkInfoBotService {
 
     String getConfirmationToken();
 
-    void sendResponseMessage(Message message, Iterable<String> clients);
+    void sendResponseMessage(Message message, Iterable<String> clientsList);
 
     void sendHelpMessage(Message message);
 

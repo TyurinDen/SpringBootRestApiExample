@@ -12,6 +12,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
+import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Component
@@ -40,7 +42,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private final String VK_BOT_CLUB_ID;
     private final OkHttpClient okHttpClient;
     private final VkInfoBotConfig botConfig;
-    private final MediaType TEXT = MediaType.parse("text/plain; charset=utf-8");
+    private final MediaType MEDIA_TYPE_PLAINTEXT = MediaType.parse("text/plain; charset=utf-8");
     private TestClientCustomRepository clientCustomRepository;
     private Set<Command> commandSet;
 
@@ -49,10 +51,14 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
                                 @Qualifier("TestClientCustomRepositoryImpl") TestClientCustomRepository clientCustomRepository) {
         Command findById = new Command("^i$|^и$|^ид$|^id$", 1,
                 new String[]{"^[0-9]+\\*?$|^\\*[0-9]+$"}, SQL_QUERY + "cl.client_id RLIKE('%s') LIMIT %s");
-        Command findByCityAndLastName = new Command("^cl$|^cln$|^сл$|^слн$", 2,
+        Command findByCityAndLastName = new Command("^cln$|^слн$", 2,
                 new String[]{"^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$", "^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$"},
                 SQL_QUERY + "cl.city RLIKE('%s') AND cl.last_name RLIKE('%s') LIMIT %s");
-        commandSet = new HashSet<>(Arrays.asList(findById, findByCityAndLastName));
+        Command findByCity = new Command("^c$|^city$|^с$|^сити$|^город$", 1,
+                new String[]{"^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$"}, SQL_QUERY + "cl.city RLIKE('%s') LIMIT %s");
+        Command findByLastName = new Command("^ln$|^lastname$|^фамилия$|^лн$", 1,
+                new String[]{"^[a-zа-я]+\\*?$|^\\*[a-zа-я]+$"}, SQL_QUERY + "cl.last_name RLIKE('%s') LIMIT %s");
+        commandSet = new HashSet<>(Arrays.asList(findById, findByCityAndLastName, findByCity, findByLastName));
 
         this.clientCustomRepository = clientCustomRepository;
 
@@ -72,11 +78,34 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     @Override
-    public void sendResponseMessage(Message message, Iterable<String> clients) {
-        for (String client : clients) {
+    public void sendResponseMessage(Message message, Iterable<String> clientsList) {
+        // TODO: 17.07.2019 упаковать сообщения в сообщения побольше
+        List<String> packedClientList = packClientList(clientsList);
+        for (String client : packedClientList) {
             message.setText(client);
             sendMessage(message);
         }
+    }
+
+    private List<String> packClientList(Iterable<String> clientsList) {
+        StringBuilder listItem = new StringBuilder();
+        final int MAX_MESSAGE_LENGTH = 4096;
+        int messageLength = 0;
+        List<String> packedClientList = new ArrayList<>();
+
+        for (String client : clientsList) {
+            if (messageLength + client.getBytes().length < MAX_MESSAGE_LENGTH) {
+                listItem.append(client);
+                messageLength += client.getBytes().length;
+            } else {
+                packedClientList.add(listItem.toString());
+                listItem = new StringBuilder();
+                listItem.append(client);
+                messageLength = client.getBytes().length;
+            }
+        }
+        packedClientList.add(listItem.toString());
+        return packedClientList;
     }
 
     @Override
@@ -97,23 +126,28 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     @Override
-    public void sendHelpMessage(Message message) { // TODO: 15.07.2019 дописать справку, чтобы было понятно однозначно
-        final String HELP_MESSAGE = ">>>>>>>>>>>>>>>>>>>> VkInfoBot - поиск клиентов в CRM <<<<<<<<<<<<<<<<<<<<\n\n" +
-                "Бот понимает следующие команды (регистр символов игнорируется):\n" +
-                "id (i, ид, и): поиск по идентефикатору.\n" +
-                "id 123: найти клиента с ID == 123.\n" +
+    public void sendHelpMessage(Message message) {
+        final String HELP_MESSAGE = "*************** VkInfoBot - поиск клиентов в CRM ***************\n\n" +
+                " Бот понимает следующие команды (регистр игнорируется):\n" +
+                "--------------------------------------------------------------------------------------------------\n" +
+                "id [i, ид, и]: поиск по идентефикатору.\n" +
+                "id 123: найти клиента с ID равным 123.\n" +
                 "id *123: найти клиента с ID, заканчивающимся на 123.\n" +
-                "id 123*: найти клиента с ID, начинающимся на 123.\n\n" +
-                "cl (cln, сл, слн): поиск по городу и фамилии.\n" +
-                "cl Москва Иванов: найти клиентов из Москвы с фамилией \n" +
-                "Иванов.\n" +
-                "cl М* И*: найти клиентов из города, название которого,\n" +
-                "начинается на \'м\', с фамилией, начинающейся на \'и\'.\n" +
-                "Варианты аргументов команды те же, что и при поиске по\n" +
-                "идентефикатору.\n\n" +
-                "Количество найденных клиентов ограничено по умолчанию \n" +
-                "двадцатью (20), но его можно уменьшить, передав еще один\n" +
-                "аргумент команде, например: id *123 5";
+                "id 123*: найти клиента с ID, начинающимся с 123.\n" +
+                "--------------------------------------------------------------------------------------------------\n" +
+                "cln [слн]: поиск по городу и фамилии.\n" +
+                "cln Москва Иванов: найти клиентов из Москвы с фамилией\n" +
+                "Иванов. Или cl м* и*: найти клиентов из города на \'м\'\n" +
+                "с фамилией, начинающейся на \'и\'.\n" +
+                "--------------------------------------------------------------------------------------------------\n" +
+                "city [c, сити, город]: поиск по городу.\n" +
+                "--------------------------------------------------------------------------------------------------\n" +
+                "ln [lastname, фамилия, лн]: поиск по фамилии.\n" +
+                "--------------------------------------------------------------------------------------------------\n" +
+                "Все команды поддерживают символ \'*\' в аргументах.\n\n" +
+                "Количество результатов ограничено двадцатью, но его\n" +
+                "можно уменьшить, передав еще один аргумент команде:\n" +
+                "id *123 5 - ограничить вывод пятью результатами.\n";
         message.setText(HELP_MESSAGE);
         sendMessage(message);
     }
@@ -128,7 +162,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     private List<String> formTextViewOfClientList(List<Object[]> clients) {
-        String[] prefixes = new String[]{"ID:", "ФИО:", "", "Живет в:", "Описание:", "Комментарий:",
+        String[] prefixes = new String[]{"ID:", "ФИО:", "", "Живет:", "Описание:", "Комментарий:",
                 "Отложенный комментарий:", "Менеджер:", "Ментор:"};
         List<String> clientsList = new ArrayList<>();
         for (Object[] objects : clients) {
@@ -148,18 +182,17 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     private void sendMessage(Message message) {
-        HttpUrl.Builder urlBuilder = HttpUrl.parse(VK_URL_API + "/messages.send").newBuilder();
-        urlBuilder.addQueryParameter("user_id", String.valueOf(message.getFromId()));
-        urlBuilder.addQueryParameter("random_id", String.valueOf(message.getRandomId()));
-        urlBuilder.addQueryParameter("group_id", String.valueOf(VK_BOT_CLUB_ID));
-        urlBuilder.addQueryParameter("reply_to", String.valueOf(message.getId()));
-        urlBuilder.addQueryParameter("message", String.valueOf(message.getText()));
-        urlBuilder.addQueryParameter("access_token", VK_BOT_ACCESS_TOKEN);
-        urlBuilder.addQueryParameter("v", VK_API_VERSION);
+        RequestBody requestBody = new FormEncodingBuilder()
+                .add("user_id", String.valueOf(message.getFromId()))
+                .add("random_id", String.valueOf(message.getRandomId()))
+                .add("group_id", String.valueOf(VK_BOT_CLUB_ID))
+                .add("reply_to", String.valueOf(message.getId()))
+                .add("message", String.valueOf(message.getText()))
+                .add("access_token", VK_BOT_ACCESS_TOKEN)
+                .add("v", VK_API_VERSION)
+                .build();
 
-        String url = urlBuilder.build().toString();
-        RequestBody requestBody = RequestBody.create(TEXT, message.getText());
-        Request request = new Request.Builder().url(url).post(requestBody).build();
+        Request request = new Request.Builder().url(VK_URL_API + "/messages.send").post(requestBody).build();
         String responseBodyString = "No response body!";
         try {
             Response response = okHttpClient.newCall(request).execute();
