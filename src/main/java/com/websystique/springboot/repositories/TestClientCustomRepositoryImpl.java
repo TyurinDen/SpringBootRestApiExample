@@ -16,9 +16,9 @@ public class TestClientCustomRepositoryImpl implements TestClientCustomRepositor
     private EntityManager entityManager;
 
     @Override
-    public List<Object[]>  getClients(String sqlQuery) {
+    public List<Object[]> getClientsByCommandFromVkInfoBot(String sqlQuery) {
         Query query = entityManager.createNativeQuery(sqlQuery);
-        return query.getResultList();
+        return (List<Object[]>) query.getResultList();
     }
 
 }

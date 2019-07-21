@@ -49,7 +49,7 @@ public class VkInfoBotController {
             if (message.getText().trim().toLowerCase().matches(HELP_MESSAGE_REGEX)) {
                 vkInfoBotService.sendHelpMessage(message);
             } else {
-                vkInfoBotService.sendResponseMessage(message, vkInfoBotService.findClients(message.getText()));
+                vkInfoBotService.sendResultMessage(message);
             }
         }
         return new ResponseEntity<>("ok", HttpStatus.OK);

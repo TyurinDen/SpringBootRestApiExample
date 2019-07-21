@@ -4,6 +4,6 @@ import java.util.List;
 
 public interface TestClientCustomRepository {
 
-    List<Object[]> getClients(String sqlQuery);
+    List<Object[]> getClientsByCommandFromVkInfoBot(String sqlQuery);
 
 }

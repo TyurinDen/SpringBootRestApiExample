@@ -12,28 +12,32 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.stereotype.Component;
 
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
 import java.util.*;
 
 @Component
 public class VkInfoBotServiceImpl implements VkInfoBotService {
     private static Logger logger = LoggerFactory.getLogger(VkInfoBotServiceImpl.class.getName());
     private final String SQL_QUERY = "SELECT\n" +
-            "cl.client_id AS id,\n" +
-            "concat(cl.last_name, ' ', cl.first_name) AS fio,\n" +
-            "concat('Email: ', cl.email, ', телефон: ', cl.phone_number) AS contacts," +
-            "concat(cl.country, ',', ' ', cl.city) AS lives_in,\n" +
-            "cl.client_description_comment AS description,\n" +
-            "cl.comment,\n" +
-            "cl.postpone_comment AS p_comment,\n" +
-            "concat(u.last_name, ' ', u.first_name) AS owner,\n" +
-            "concat(u1.last_name, ' ', u1.first_name) AS mentor\n" +
-            "FROM CLIENT cl\n" +
-            "LEFT JOIN\n" +
-            "USER u ON cl.owner_user_id = u.user_id\n" +
-            "LEFT JOIN\n" +
-            "user u1 ON cl.owner_mentor_id = u1.user_id\n" +
+            "    cl.client_id AS id,\n" +
+            "    CONCAT(cl.last_name, ' ', cl.first_name) AS fio,\n" +
+            "    CASE\n" +
+            "        WHEN cl.phone_number IS NULL AND cl.email IS NULL THEN 'Контакты не указаны'" +
+            "        WHEN cl.email IS NULL THEN CONCAT('Телефон: ', cl.phone_number)\n" +
+            "        WHEN cl.phone_number IS NULL THEN CONCAT('Email: ', cl.email)\n" +
+            "        ELSE CONCAT('Email: ', cl.email, ', телефон: ', cl.phone_number)\n" +
+            "    END AS contacts,\n" +
+            "    CONCAT(cl.country, ', ', cl.city) AS lives_in,\n" +
+            "    cl.client_description_comment AS description,\n" +
+            "    cl.comment,\n" +
+            "    cl.postpone_comment AS p_comment,\n" +
+            "    CONCAT(u.last_name, ' ', u.first_name) AS owner,\n" +
+            "    CONCAT(u1.last_name, ' ', u1.first_name) AS mentor\n" +
+            "FROM\n" +
+            "    CLIENT cl\n" +
+            "        LEFT JOIN\n" +
+            "    user u ON cl.owner_user_id = u.user_id\n" +
+            "        LEFT JOIN\n" +
+            "    user u1 ON cl.owner_mentor_id = u1.user_id\n" +
             "WHERE ";
     private final String VK_URL_API;
     private final String VK_API_VERSION;
@@ -42,7 +46,6 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private final String VK_BOT_CLUB_ID;
     private final OkHttpClient okHttpClient;
     private final VkInfoBotConfig botConfig;
-    private final MediaType MEDIA_TYPE_PLAINTEXT = MediaType.parse("text/plain; charset=utf-8");
     private TestClientCustomRepository clientCustomRepository;
     private Set<Command> commandSet;
 
@@ -78,10 +81,8 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     }
 
     @Override
-    public void sendResponseMessage(Message message, Iterable<String> clientsList) {
-        // TODO: 17.07.2019 упаковать сообщения в сообщения побольше
-        List<String> packedClientList = packClientList(clientsList);
-        for (String client : packedClientList) {
+    public void sendResultMessage(Message message) {
+        for (String client : packClientList(findClients(message.getText()))) {
             message.setText(client);
             sendMessage(message);
         }
@@ -90,32 +91,35 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private List<String> packClientList(Iterable<String> clientsList) {
         StringBuilder listItem = new StringBuilder();
         final int MAX_MESSAGE_LENGTH = 4096;
+        final int MAX_RESULTS_PER_MESSAGE = 4;
+        int resultsPerMessage = 0;
         int messageLength = 0;
         List<String> packedClientList = new ArrayList<>();
 
         for (String client : clientsList) {
-            if (messageLength + client.getBytes().length < MAX_MESSAGE_LENGTH) {
-                listItem.append(client);
+            if (messageLength + client.getBytes().length < MAX_MESSAGE_LENGTH &
+                    resultsPerMessage < MAX_RESULTS_PER_MESSAGE) {
+                listItem.append(client).append("\n");
                 messageLength += client.getBytes().length;
+                resultsPerMessage++;
             } else {
                 packedClientList.add(listItem.toString());
                 listItem = new StringBuilder();
-                listItem.append(client);
+                listItem.append(client).append("\n");
                 messageLength = client.getBytes().length;
+                resultsPerMessage = 1;
             }
         }
         packedClientList.add(listItem.toString());
         return packedClientList;
     }
 
-    @Override
-    public List<String> findClients(String messageText) {
+    private List<String> findClients(String messageText) {
         final String NOTHING_FOUND = "Ничего не найдено";
-        final String INCORRECT_COMMAND = "Команда некорректна";
+        final String INCORRECT_COMMAND = "Команда некорректна. См. справку: ? (help, помощь)";
         Command command = getCommand(messageText.trim().toLowerCase());
         if (command != null) {
-            System.out.println(command.getSqlQuery());
-            List<Object[]> clientList = clientCustomRepository.getClients(command.getSqlQuery());
+            List<Object[]> clientList = clientCustomRepository.getClientsByCommandFromVkInfoBot(command.getSqlQuery());
             if (clientList.isEmpty()) {
                 return Arrays.asList(NOTHING_FOUND);
             }
@@ -133,7 +137,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
                 "id [i, ид, и]: поиск по идентефикатору.\n" +
                 "id 123: найти клиента с ID равным 123.\n" +
                 "id *123: найти клиента с ID, заканчивающимся на 123.\n" +
-                "id 123*: найти клиента с ID, начинающимся с 123.\n" +
+                "id 123*: найти клиента с ID, начинающимся со 123.\n" +
                 "--------------------------------------------------------------------------------------------------\n" +
                 "cln [слн]: поиск по городу и фамилии.\n" +
                 "cln Москва Иванов: найти клиентов из Москвы с фамилией\n" +
@@ -164,11 +168,12 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
     private List<String> formTextViewOfClientList(List<Object[]> clients) {
         String[] prefixes = new String[]{"ID:", "ФИО:", "", "Живет:", "Описание:", "Комментарий:",
                 "Отложенный комментарий:", "Менеджер:", "Ментор:"};
+        int counter = 1;
         List<String> clientsList = new ArrayList<>();
+        StringBuilder stringBuilder = new StringBuilder();
+        stringBuilder.append("Найдено ").append(clients.size()).append("\n\n");
         for (Object[] objects : clients) {
-            StringBuilder stringBuilder = new StringBuilder();
-            // TODO: 17.07.2019 подумать как красиво вывести первую строку
-//            stringBuilder.append("************************** CLIENT **************************\n");
+            stringBuilder.append("> ").append(counter++).append(" из ").append(clients.size()).append("\n");
             for (int i = 0; i < prefixes.length; i++) {
                 if (objects[i] != null) {
                     stringBuilder.append("> ").append(prefixes[i]).append(" ").append(objects[i]).append("\n");
@@ -177,6 +182,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
                 }
             }
             clientsList.add(stringBuilder.toString());
+            stringBuilder = new StringBuilder();
         }
         return clientsList;
     }

@@ -26,7 +26,6 @@ public class Command {
             return false;
         }
 
-        //TODO переделать! считывать параметр из конфиг файла!
         resultLimit = MAX_NUMBER_OF_RESULTS;
         if (commandComponents.length > numberOfArgs + 1) {
             if (commandComponents[numberOfArgs + 1].matches(RESULT_LIMIT_REGEX)) {
