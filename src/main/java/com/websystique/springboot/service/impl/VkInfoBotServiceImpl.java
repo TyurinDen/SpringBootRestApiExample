@@ -17,41 +17,40 @@ import java.util.*;
 @Component
 public class VkInfoBotServiceImpl implements VkInfoBotService {
     private static Logger logger = LoggerFactory.getLogger(VkInfoBotServiceImpl.class.getName());
-    private final String SQL_QUERY = "SELECT\n" +
-            "    cl.client_id AS id,\n" +
-            "    CONCAT(cl.last_name, ' ', cl.first_name) AS fio,\n" +
-            "    CASE\n" +
-            "        WHEN cl.phone_number IS NULL AND cl.email IS NULL THEN 'Контакты не указаны'" +
-            "        WHEN cl.email IS NULL THEN CONCAT('Телефон: ', cl.phone_number)\n" +
-            "        WHEN cl.phone_number IS NULL THEN CONCAT('Email: ', cl.email)\n" +
-            "        ELSE CONCAT('Email: ', cl.email, ', телефон: ', cl.phone_number)\n" +
-            "    END AS contacts,\n" +
-            "    CONCAT(cl.country, ', ', cl.city) AS lives_in,\n" +
-            "    cl.client_description_comment AS description,\n" +
-            "    cl.comment,\n" +
-            "    cl.postpone_comment AS p_comment,\n" +
-            "    CONCAT(u.last_name, ' ', u.first_name) AS owner,\n" +
-            "    CONCAT(u1.last_name, ' ', u1.first_name) AS mentor\n" +
-            "FROM\n" +
-            "    CLIENT cl\n" +
-            "        LEFT JOIN\n" +
-            "    user u ON cl.owner_user_id = u.user_id\n" +
-            "        LEFT JOIN\n" +
-            "    user u1 ON cl.owner_mentor_id = u1.user_id\n" +
-            "WHERE ";
     private final String VK_URL_API;
     private final String VK_API_VERSION;
     private final String VK_BOT_ACCESS_TOKEN;
     private final String VK_BOT_CONFIRMATION_TOKEN;
     private final String VK_BOT_CLUB_ID;
     private final OkHttpClient okHttpClient;
-    private final VkInfoBotConfig botConfig;
     private TestClientCustomRepository clientCustomRepository;
     private Set<Command> commandSet;
 
     @Autowired
     public VkInfoBotServiceImpl(VkInfoBotConfig vkInfoBotConfig,
                                 @Qualifier("TestClientCustomRepositoryImpl") TestClientCustomRepository clientCustomRepository) {
+        String SQL_QUERY = "SELECT\n" +
+                "    cl.client_id AS id,\n" +
+                "    CONCAT(cl.last_name, ' ', cl.first_name) AS fio,\n" +
+                "    CASE\n" +
+                "        WHEN cl.phone_number IS NULL AND cl.email IS NULL THEN 'Контакты не указаны'" +
+                "        WHEN cl.email IS NULL THEN CONCAT('Телефон: ', cl.phone_number)\n" +
+                "        WHEN cl.phone_number IS NULL THEN CONCAT('Email: ', cl.email)\n" +
+                "        ELSE CONCAT('Email: ', cl.email, ', телефон: ', cl.phone_number)\n" +
+                "    END AS contacts,\n" +
+                "    CONCAT(cl.country, ', ', cl.city) AS lives_in,\n" +
+                "    cl.client_description_comment AS description,\n" +
+                "    cl.comment,\n" +
+                "    cl.postpone_comment AS p_comment,\n" +
+                "    CONCAT(u.last_name, ' ', u.first_name) AS owner,\n" +
+                "    CONCAT(u1.last_name, ' ', u1.first_name) AS mentor\n" +
+                "FROM\n" +
+                "    CLIENT cl\n" +
+                "        LEFT JOIN\n" +
+                "    user u ON cl.owner_user_id = u.user_id\n" +
+                "        LEFT JOIN\n" +
+                "    user u1 ON cl.owner_mentor_id = u1.user_id\n" +
+                "WHERE ";
         Command findById = new Command("^i$|^и$|^ид$|^id$", 1,
                 new String[]{"^[0-9]+\\*?$|^\\*[0-9]+$"}, SQL_QUERY + "cl.client_id RLIKE('%s') LIMIT %s");
         Command findByCityAndLastName = new Command("^cln$|^слн$", 2,
@@ -64,15 +63,12 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         commandSet = new HashSet<>(Arrays.asList(findById, findByCityAndLastName, findByCity, findByLastName));
 
         this.clientCustomRepository = clientCustomRepository;
-
         okHttpClient = new OkHttpClient();
-        botConfig = vkInfoBotConfig;
-
-        VK_URL_API = botConfig.getVkApiUrl();
-        VK_API_VERSION = botConfig.getVkApiVersion();
-        VK_BOT_ACCESS_TOKEN = botConfig.getVkInfoBotAccessToken();
-        VK_BOT_CONFIRMATION_TOKEN = botConfig.getVkInfoBotConfirmationToken();
-        VK_BOT_CLUB_ID = botConfig.getVkInfoBotClubId();
+        VK_URL_API = vkInfoBotConfig.getVkApiUrl();
+        VK_API_VERSION = vkInfoBotConfig.getVkApiVersion();
+        VK_BOT_ACCESS_TOKEN = vkInfoBotConfig.getVkInfoBotAccessToken();
+        VK_BOT_CONFIRMATION_TOKEN = vkInfoBotConfig.getVkInfoBotConfirmationToken();
+        VK_BOT_CLUB_ID = vkInfoBotConfig.getVkInfoBotClubId();
     }
 
     @Override
@@ -90,8 +86,8 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
 
     private List<String> packClientList(Iterable<String> clientsList) {
         StringBuilder listItem = new StringBuilder();
-        final int MAX_MESSAGE_LENGTH = 4096;
-        final int MAX_RESULTS_PER_MESSAGE = 4;
+        final int MAX_MESSAGE_LENGTH = 4096;//ограничение на длину сообщения ВК
+        final int MAX_RESULTS_PER_MESSAGE = 4;//количество клиентов, информация о которых упаковывается в одно сообщение
         int resultsPerMessage = 0;
         int messageLength = 0;
         List<String> packedClientList = new ArrayList<>();
@@ -121,11 +117,11 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         if (command != null) {
             List<Object[]> clientList = clientCustomRepository.getClientsByCommandFromVkInfoBot(command.getSqlQuery());
             if (clientList.isEmpty()) {
-                return Arrays.asList(NOTHING_FOUND);
+                return Collections.singletonList(NOTHING_FOUND);
             }
             return formTextViewOfClientList(clientList);
         } else {
-            return Arrays.asList(INCORRECT_COMMAND);
+            return Collections.singletonList(INCORRECT_COMMAND);
         }
     }
 
@@ -171,7 +167,7 @@ public class VkInfoBotServiceImpl implements VkInfoBotService {
         int counter = 1;
         List<String> clientsList = new ArrayList<>();
         StringBuilder stringBuilder = new StringBuilder();
-        stringBuilder.append("Найдено ").append(clients.size()).append("\n\n");
+        stringBuilder.append("Найдено: ").append(clients.size()).append("\n\n");
         for (Object[] objects : clients) {
             stringBuilder.append("> ").append(counter++).append(" из ").append(clients.size()).append("\n");
             for (int i = 0; i < prefixes.length; i++) {

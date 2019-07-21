@@ -8,7 +8,7 @@ import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.deser.std.StdDeserializer;
 
 import java.io.IOException;
-import java.util.Arrays;
+import java.util.Collections;
 
 public class CustomNewEventDeserializer extends StdDeserializer<NewEvent> {
 
@@ -39,10 +39,10 @@ public class CustomNewEventDeserializer extends StdDeserializer<NewEvent> {
                 .peerId(objectNode.get("peer_id").asLong())
                 .text(objectNode.get("text").asText())
                 .convMessagesId(objectNode.get("conversation_message_id").asInt())
-                .fwdMessagesList(Arrays.asList(objectNode.get("fwd_messages").asText()))
+                .fwdMessagesList(Collections.singletonList(objectNode.get("fwd_messages").asText()))
                 .important(objectNode.get("important").asBoolean())
                 .randomId(objectNode.get("random_id").asInt())
-                .attachmentsList(Arrays.asList(objectNode.get("fwd_messages").asText()))
+                .attachmentsList(Collections.singletonList(objectNode.get("fwd_messages").asText()))
                 .isHidden(objectNode.get("is_hidden").asBoolean()).build();
         newEvent.setMessage(message);
         return newEvent;
